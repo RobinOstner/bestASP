@@ -1,12 +1,8 @@
-// BMP.cpp : Definiert den Einstiegspunkt für die Konsolenanwendung.
+// main.c : Definiert den Einstiegspunkt für die Konsolenanwendung.
 //
 
-#include <stdafx.h>
 #include <stdio.h>
-#include <vector>
-#include <iterator>
-
-using namespace std;
+#include <stdlib.h>
 
 void writeBMP(unsigned char* image_data, int w, int h) {
 	//header und infoheader nach wikipedia definition
@@ -126,7 +122,7 @@ int main()
 
 	writeBMP(image, width, height);
 
-	system("pause");
+	//system("pause");
 
     return 0;
 }
