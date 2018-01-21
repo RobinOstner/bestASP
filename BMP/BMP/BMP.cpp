@@ -163,20 +163,63 @@ static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos,
 	return window;
 }
 
+static unsigned char* zoomImage(unsigned char* image_data, int originalHeight, int originalWidth, int zoomFactor) {
+	// Allocate memory to store image data (non-padded)
+	unsigned char* zoom = (unsigned char *)malloc(originalHeight*originalWidth * zoomFactor * zoomFactor * 3 * sizeof(unsigned char));
+	
+	if (zoom == NULL)
+	{
+		printf("Error: Malloc failed\n");
+		return image_data;
+	}
+
+	// Loop over all original pixels
+	for(int pixelX = 0; pixelX < originalWidth; pixelX++){
+		for (int pixelY = 0; pixelY < originalHeight; pixelY++) {
+
+			// The index in the array for the current pixel
+			int pixelIndex = pixelX*zoomFactor * 3 + pixelY*zoomFactor*zoomFactor*originalWidth * 3;
+
+			zoom[pixelIndex] = image_data[pixelX * 3 + pixelY*originalWidth * 3];
+			zoom[pixelIndex+1] = image_data[pixelX * 3 + pixelY*originalWidth * 3+1];
+			zoom[pixelIndex+2] = image_data[pixelX * 3 + pixelY*originalWidth * 3+2];
+
+			// Fill the rest
+			for (int x = 0; x < zoomFactor; x++) {
+				for (int y = 0; y < zoomFactor; y++) {
+					if (x == 0 && y == 0) {
+						continue;
+					}
+
+					zoom[pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3] = 0;
+					zoom[pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3 + 1] = 0;
+					zoom[pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3 + 2] = 0;
+				}
+			}
+
+		}
+	}
+
+	return zoom;
+}
+
 int main()
 {
 	char* filename = "Confirm-512.bmp";
 
 	readBmp(filename);
 
-	int windowWidth = 401;
-	int windowHeight = 509;
+	int windowWidth = 512;
+	int windowHeight = 512;
 	int xOffset = 0;
 	int yOffset = 0;
+	int zoomfactor = 2;
 
 	image = windowImage(image, xOffset, yOffset, windowWidth, windowHeight, 512, 512);
 
-	writeBMP(image, windowWidth, windowHeight);
+	image = zoomImage(image, windowHeight, windowWidth, zoomfactor);
+
+	writeBMP(image, windowWidth*zoomfactor, windowHeight*zoomfactor);
 
 	system("pause");
 
