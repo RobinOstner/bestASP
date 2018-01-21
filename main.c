@@ -1,8 +1,15 @@
-// main.c : Definiert den Einstiegspunkt für die Konsolenanwendung.
+// BMP.cpp : Definiert den Einstiegspunkt für die Konsolenanwendung.
 //
 
-#include <stdio.h>
+//#include <stdafx.h>
 #include <stdlib.h>
+#include <stdio.h>
+//#include <vector>
+//#include <iterator>
+
+//using namespace std;
+
+extern void windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
 
 void writeBMP(unsigned char* image_data, int w, int h) {
 	//header und infoheader nach wikipedia definition
@@ -42,8 +49,31 @@ void writeBMP(unsigned char* image_data, int w, int h) {
 	fwrite(bmpfileheader, 1, 14, f);
 	fwrite(bmpinfoheader, 1, 40, f);
 
-	//schreiben des Bildes
-	fwrite(image_data, w*h, 3, f);
+	unsigned char buffer[1] = { 0 };
+
+	if (w % 4 == 0) {
+		//schreiben des Bildes
+		fwrite(image_data, w*h, 3, f);
+	}
+	else {
+		int buffersize = 4 - (w*3) % 4;
+
+		printf("Buffersize: %d\n", buffersize);
+
+		for (int y = 0; y < h; y++) {
+
+			//Write first line
+			fwrite(image_data, w, 3, f);
+
+			// Adjust data
+			image_data += w * 3 * sizeof(unsigned char);
+
+			for (int i = 0; i < buffersize; i++) {
+				// Fill with buffer
+				fwrite(buffer, 1, 1, f);
+			}
+		}
+	}
 	fclose(f);
 }
 
@@ -114,13 +144,148 @@ static void readBmp(char *filename)
 	fclose(file);
 }
 
+/*
+static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth) {
+
+	// Allocate memory to store image data (non-padded)
+	unsigned char* window = (unsigned char *)malloc(width * height * 3 * sizeof(unsigned char));
+	
+	if (window == NULL)
+	{
+		printf("Error: Malloc failed\n");
+		return image_data;
+	}
+
+	for (int x = 0; x < width; x++) {
+		for (int y = 0; y < height; y++) {
+			window[(x + y*width) * 3] = image[(xPos+yPos*originalWidth)*3 + (x + y*originalWidth) * 3];
+			window[(x + y*width) * 3+1] = image[(xPos + yPos*originalWidth) * 3 + (x + y*originalWidth) * 3+1];
+			window[(x + y*width) * 3+2] = image[(xPos + yPos*originalWidth) * 3 + (x + y*originalWidth) * 3+2];
+		}
+	}
+
+	return window;
+}
+*/
+
+static unsigned char* zoomImage(unsigned char* image_data, int originalHeight, int originalWidth, int zoomFactor) {
+	// Allocate memory to store image data (non-padded)
+	unsigned char* zoom = (unsigned char *)malloc(originalHeight*originalWidth * zoomFactor * zoomFactor * 3 * sizeof(unsigned char));
+	
+	if (zoom == NULL)
+	{
+		printf("Error: Malloc failed\n");
+		return image_data;
+	}
+
+	// Loop over all original pixels
+	for(int pixelX = 0; pixelX < originalWidth; pixelX++){
+		for (int pixelY = 0; pixelY < originalHeight; pixelY++) {
+
+			// The index in the array for the current pixel
+			int pixelIndex = pixelX*zoomFactor * 3 + pixelY*zoomFactor*zoomFactor*originalWidth * 3;
+
+			zoom[pixelIndex] = image_data[pixelX * 3 + pixelY*originalWidth * 3];
+			zoom[pixelIndex+1] = image_data[pixelX * 3 + pixelY*originalWidth * 3+1];
+			zoom[pixelIndex+2] = image_data[pixelX * 3 + pixelY*originalWidth * 3+2];
+
+			// Fill the rest
+			for (int x = 0; x < zoomFactor; x++) {
+				for (int y = 0; y < zoomFactor; y++) {
+
+					if (x == 0 && y == 0) {
+						continue;
+					}
+
+					zoom[pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3] = 0;
+					zoom[pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3 + 1] = 0;
+					zoom[pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3 + 2] = 0;
+				}
+			}
+
+		}
+	}
+
+	
+
+	for (int i = 0; i < zoomFactor - 1; i++){
+
+		// Loop over all original pixels
+		for (int pixelX = 0; pixelX < originalWidth; pixelX++) {
+			for (int pixelY = 0; pixelY < originalHeight; pixelY++) {
+
+				// The index in the array for the current pixel
+				int pixelIndex = pixelX*zoomFactor * 3 + pixelY*zoomFactor*zoomFactor*originalWidth * 3;
+
+				// Fill the rest
+				for (int x = -i; x < i; x++) {
+					for (int y = -i; y < i; y++) {
+						if (x == 0 && y == 0) {
+							continue;
+						}
+
+						int fillPixelIndex = pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3;
+
+						if (fillPixelIndex < 0) { continue; }
+						if (zoom[fillPixelIndex] != 0) { continue; }
+
+						// Left
+						if (fillPixelIndex-3 > 0 && zoom[fillPixelIndex - 3] != 0) {
+							zoom[fillPixelIndex] = zoom[fillPixelIndex - 3];
+							zoom[fillPixelIndex + 1] = zoom[fillPixelIndex - 2];
+							//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex - 1];
+						}
+						else {
+							// Right
+							if (fillPixelIndex + 3 < originalWidth*zoomFactor && zoom[fillPixelIndex + 3] != 0) {
+								zoom[fillPixelIndex] = zoom[fillPixelIndex - 3];
+								zoom[fillPixelIndex + 1] = zoom[fillPixelIndex - 2];
+								//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex - 1];
+							}
+							else {
+								// Up
+								if (fillPixelIndex + originalWidth*zoomFactor * 3 < originalWidth * originalHeight* zoomFactor * zoomFactor * 3 && zoom[fillPixelIndex + originalWidth*zoomFactor * 3] != 0) {
+									zoom[fillPixelIndex] = zoom[fillPixelIndex + originalWidth*zoomFactor * 3];
+									zoom[fillPixelIndex + 1] = zoom[fillPixelIndex + originalWidth*zoomFactor * 3 + 1];
+									//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex + originalWidth*zoomFactor * 3 + 2];
+								}
+								else {
+									// Down
+									if (fillPixelIndex - originalWidth*zoomFactor * 3 >= 0 && zoom[fillPixelIndex - originalWidth*zoomFactor * 3] != 0) {
+										zoom[fillPixelIndex] = zoom[fillPixelIndex - originalWidth*zoomFactor * 3];
+										zoom[fillPixelIndex + 1] = zoom[fillPixelIndex - originalWidth*zoomFactor * 3 + 1];
+										//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex - originalWidth*zoomFactor * 3 + 2];
+									}
+								}
+							}
+						}
+					}
+				}
+
+			}
+		}
+	}
+
+	return zoom;
+}
+
 int main()
 {
 	char* filename = "Confirm-512.bmp";
 
 	readBmp(filename);
 
-	writeBMP(image, width, height);
+	int windowWidth = 508;
+	int windowHeight = 508;
+	int xOffset = 0;
+	int yOffset = 0;
+	int zoomfactor = 1;
+
+	windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
+
+	//image = zoomImage(image, windowHeight, windowWidth, zoomfactor);
+
+	writeBMP(image, windowWidth*zoomfactor, windowHeight*zoomfactor);
 
 	//system("pause");
 
