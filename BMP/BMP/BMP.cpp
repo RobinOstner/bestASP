@@ -1,7 +1,7 @@
 // BMP.cpp : Definiert den Einstiegspunkt für die Konsolenanwendung.
 //
 
-#include <stdafx.h>
+#include "stdafx.h"
 #include <stdio.h>
 #include <vector>
 #include <iterator>
@@ -46,8 +46,31 @@ void writeBMP(unsigned char* image_data, int w, int h) {
 	fwrite(bmpfileheader, 1, 14, f);
 	fwrite(bmpinfoheader, 1, 40, f);
 
-	//schreiben des Bildes
-	fwrite(image_data, w*h, 3, f);
+	unsigned char buffer[1] = { 0 };
+	 
+	if (w % 4 == 0) {
+		//schreiben des Bildes
+		fwrite(image_data, w*h, 3, f);
+	}
+	else {
+		int buffersize = 4 - (w*3) % 4;
+
+		printf("Buffersize: %d\n", buffersize);
+
+		for (int y = 0; y < h; y++) {
+
+			//Write first line
+			fwrite(image_data, w, 3, f);
+
+			// Adjust data
+			image_data += w * 3 * sizeof(unsigned char);
+
+			for (int i = 0; i < buffersize; i++) {
+				// Fill with buffer
+				fwrite(buffer, 1, 1, f);
+			}
+		}
+	}
 	fclose(f);
 }
 
@@ -118,13 +141,42 @@ static void readBmp(char *filename)
 	fclose(file);
 }
 
+static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth, int originalHeight) {
+
+	// Allocate memory to store image data (non-padded)
+	unsigned char* window = (unsigned char *)malloc(width * height * 3 * sizeof(unsigned char));
+	
+	if (window == NULL)
+	{
+		printf("Error: Malloc failed\n");
+		return image_data;
+	}
+
+	for (int x = 0; x < width; x++) {
+		for (int y = 0; y < height; y++) {
+			window[(x + y*width) * 3] = image[(xPos+yPos*originalWidth)*3 + (x + y*originalWidth) * 3];
+			window[(x + y*width) * 3+1] = image[(xPos + yPos*originalWidth) * 3 + (x + y*originalWidth) * 3+1];
+			window[(x + y*width) * 3+2] = image[(xPos + yPos*originalWidth) * 3 + (x + y*originalWidth) * 3+2];
+		}
+	}
+
+	return window;
+}
+
 int main()
 {
 	char* filename = "Confirm-512.bmp";
 
 	readBmp(filename);
 
-	writeBMP(image, width, height);
+	int windowWidth = 401;
+	int windowHeight = 509;
+	int xOffset = 0;
+	int yOffset = 0;
+
+	image = windowImage(image, xOffset, yOffset, windowWidth, windowHeight, 512, 512);
+
+	writeBMP(image, windowWidth, windowHeight);
 
 	system("pause");
 
