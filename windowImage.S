@@ -18,6 +18,12 @@ windowImage:
 	vmov s3, r4  ;# Height
 	vmov s4, r5  ;# Original Width
 
+	vcvt.f32.u32 s0, s0
+	vcvt.f32.u32 s1, s1
+	vcvt.f32.u32 s2, s2
+	vcvt.f32.u32 s3, s3
+	vcvt.f32.u32 s4, s4
+
 	;# Image Data Pointer Copy
 	mov r1, r0
 
@@ -26,6 +32,7 @@ windowImage:
 
 schleifeX:
 	
+	mov r5, #0
 	vmov s6, r5
 
 	schleifeY:
@@ -82,6 +89,7 @@ schleifeX:
 		;# Loop
 		mov r5, #1
 		vmov s9, r5
+		vcvt.f32.u32 s9, s9
 		vadd.f32 s6, s6, s9
 		vcmp.f32 s6, s3
 		blt schleifeY

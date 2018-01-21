@@ -275,8 +275,8 @@ int main()
 
 	readBmp(filename);
 
-	int windowWidth = 508;
-	int windowHeight = 508;
+	int windowWidth = 200;
+	int windowHeight = 200;
 	int xOffset = 0;
 	int yOffset = 0;
 	int zoomfactor = 1;

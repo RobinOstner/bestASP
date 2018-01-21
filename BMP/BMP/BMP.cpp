@@ -8,6 +8,8 @@
 
 using namespace std;
 
+extern void windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
+
 void writeBMP(unsigned char* image_data, int w, int h) {
 	//header und infoheader nach wikipedia definition
 	unsigned char bmpfileheader[14] = { 'B','M', 0,0,0,0, 0,0,0,0, 54,0,0,0 };
@@ -141,6 +143,7 @@ static void readBmp(char *filename)
 	fclose(file);
 }
 
+/*
 static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth) {
 
 	// Allocate memory to store image data (non-padded)
@@ -162,6 +165,7 @@ static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos,
 
 	return window;
 }
+*/
 
 static unsigned char* zoomImage(unsigned char* image_data, int originalHeight, int originalWidth, int zoomFactor) {
 	// Allocate memory to store image data (non-padded)
@@ -276,9 +280,9 @@ int main()
 	int yOffset = 0;
 	int zoomfactor = 10;
 
-	image = windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
 
-	image = zoomImage(image, windowHeight, windowWidth, zoomfactor);
+	//image = zoomImage(image, windowHeight, windowWidth, zoomfactor);
 
 	writeBMP(image, windowWidth*zoomfactor, windowHeight*zoomfactor);
 
