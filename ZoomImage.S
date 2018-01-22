@@ -84,6 +84,6 @@ end:
 ;# Array
 .data
 .balign 4
-Array: .skip 12000000	;# Enough for 2000x2000
+Array: .skip 48000000	;# Enough for 2000x2000
 
 addr_of_Array: .word Array

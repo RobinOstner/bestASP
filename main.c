@@ -283,21 +283,21 @@ int main()
 	int windowHeight = 512;
 	int xOffset = 0;
 	int yOffset = 0;
-	int zoomfactor = 3;
+	int zoomfactor = 7;
 
 	windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
 
 	printf("Window:\n");
 
-	for (int i = 0; i < windowWidth && i < windowHeight; i++) {
-		printf("%d: %d\n", i, image[i*i * 3]);
+	for (int i = 0; i < windowWidth*zoomfactor && i < windowHeight*zoomfactor; i++) {
+		printf("%d: %d\n", i, image[i * 3]);
 	}
 
 	image = ZoomImage(image, windowHeight, windowWidth, zoomfactor);
 
 	printf("Zoom:\n");
 
-	for (int i = 0; i < windowWidth && i < windowHeight; i++) {
+	for (int i = 0; i < windowWidth*zoomfactor && i < windowHeight*zoomfactor; i++) {
 			printf("%d: %d\n", i, image[i*i * 3]);
 	}
 
