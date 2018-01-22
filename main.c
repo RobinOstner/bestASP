@@ -11,6 +11,8 @@
 
 extern void windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
 
+extern void ZoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
+
 void writeBMP(unsigned char* image_data, int w, int h) {
 	//header und infoheader nach wikipedia definition
 	unsigned char bmpfileheader[14] = { 'B','M', 0,0,0,0, 0,0,0,0, 54,0,0,0 };
@@ -168,9 +170,10 @@ static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos,
 }
 */
 
-static unsigned char* zoomImage(unsigned char* image_data, int originalHeight, int originalWidth, int zoomFactor) {
+/*
+static unsigned char* zoomImage(unsigned char* image_data, int windowHeight, int windowWidth, int zoomFactor) {
 	// Allocate memory to store image data (non-padded)
-	unsigned char* zoom = (unsigned char *)malloc(originalHeight*originalWidth * zoomFactor * zoomFactor * 3 * sizeof(unsigned char));
+	unsigned char* zoom = (unsigned char *)malloc(windowHeight*windowWidth * zoomFactor * zoomFactor * 3 * sizeof(unsigned char));
 	
 	if (zoom == NULL)
 	{
@@ -179,15 +182,15 @@ static unsigned char* zoomImage(unsigned char* image_data, int originalHeight, i
 	}
 
 	// Loop over all original pixels
-	for(int pixelX = 0; pixelX < originalWidth; pixelX++){
-		for (int pixelY = 0; pixelY < originalHeight; pixelY++) {
+	for(int pixelX = 0; pixelX < windowWidth; pixelX++){
+		for (int pixelY = 0; pixelY < windowHeight; pixelY++) {
 
 			// The index in the array for the current pixel
-			int pixelIndex = pixelX*zoomFactor * 3 + pixelY*zoomFactor*zoomFactor*originalWidth * 3;
+			int pixelIndex = pixelX*zoomFactor * 3 + pixelY*zoomFactor*zoomFactor*windowWidth * 3;
 
-			zoom[pixelIndex] = image_data[pixelX * 3 + pixelY*originalWidth * 3];
-			zoom[pixelIndex+1] = image_data[pixelX * 3 + pixelY*originalWidth * 3+1];
-			zoom[pixelIndex+2] = image_data[pixelX * 3 + pixelY*originalWidth * 3+2];
+			zoom[pixelIndex] = image_data[pixelX * 3 + pixelY*windowWidth * 3];
+			zoom[pixelIndex+1] = image_data[pixelX * 3 + pixelY*windowWidth * 3+1];
+			zoom[pixelIndex+2] = image_data[pixelX * 3 + pixelY*windowWidth * 3+2];
 
 			// Fill the rest
 			for (int x = 0; x < zoomFactor; x++) {
@@ -197,25 +200,23 @@ static unsigned char* zoomImage(unsigned char* image_data, int originalHeight, i
 						continue;
 					}
 
-					zoom[pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3] = 0;
-					zoom[pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3 + 1] = 0;
-					zoom[pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3 + 2] = 0;
+					zoom[pixelIndex + x * 3 + y*zoomFactor*windowWidth * 3] = 0;
+					zoom[pixelIndex + x * 3 + y*zoomFactor*windowWidth * 3 + 1] = 0;
+					zoom[pixelIndex + x * 3 + y*zoomFactor*windowWidth * 3 + 2] = 0;
 				}
 			}
 
 		}
 	}
 
-	
-
 	for (int i = 0; i < zoomFactor - 1; i++){
 
 		// Loop over all original pixels
-		for (int pixelX = 0; pixelX < originalWidth; pixelX++) {
-			for (int pixelY = 0; pixelY < originalHeight; pixelY++) {
+		for (int pixelX = 0; pixelX < windowWidth; pixelX++) {
+			for (int pixelY = 0; pixelY < windowHeight; pixelY++) {
 
 				// The index in the array for the current pixel
-				int pixelIndex = pixelX*zoomFactor * 3 + pixelY*zoomFactor*zoomFactor*originalWidth * 3;
+				int pixelIndex = pixelX*zoomFactor * 3 + pixelY*zoomFactor*zoomFactor*windowWidth * 3;
 
 				// Fill the rest
 				for (int x = -i; x < i; x++) {
@@ -224,7 +225,7 @@ static unsigned char* zoomImage(unsigned char* image_data, int originalHeight, i
 							continue;
 						}
 
-						int fillPixelIndex = pixelIndex + x * 3 + y*zoomFactor*originalWidth * 3;
+						int fillPixelIndex = pixelIndex + x * 3 + y*zoomFactor*windowWidth * 3;
 
 						if (fillPixelIndex < 0) { continue; }
 						if (zoom[fillPixelIndex] != 0) { continue; }
@@ -237,23 +238,23 @@ static unsigned char* zoomImage(unsigned char* image_data, int originalHeight, i
 						}
 						else {
 							// Right
-							if (fillPixelIndex + 3 < originalWidth*zoomFactor && zoom[fillPixelIndex + 3] != 0) {
+							if (fillPixelIndex + 3 < windowWidth*zoomFactor && zoom[fillPixelIndex + 3] != 0) {
 								zoom[fillPixelIndex] = zoom[fillPixelIndex - 3];
 								zoom[fillPixelIndex + 1] = zoom[fillPixelIndex - 2];
 								//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex - 1];
 							}
 							else {
 								// Up
-								if (fillPixelIndex + originalWidth*zoomFactor * 3 < originalWidth * originalHeight* zoomFactor * zoomFactor * 3 && zoom[fillPixelIndex + originalWidth*zoomFactor * 3] != 0) {
-									zoom[fillPixelIndex] = zoom[fillPixelIndex + originalWidth*zoomFactor * 3];
-									zoom[fillPixelIndex + 1] = zoom[fillPixelIndex + originalWidth*zoomFactor * 3 + 1];
+								if (fillPixelIndex + windowWidth*zoomFactor * 3 < windowWidth * windowHeight* zoomFactor * zoomFactor * 3 && zoom[fillPixelIndex + windowWidth*zoomFactor * 3] != 0) {
+									zoom[fillPixelIndex] = zoom[fillPixelIndex + windowWidth*zoomFactor * 3];
+									zoom[fillPixelIndex + 1] = zoom[fillPixelIndex + windowWidth*zoomFactor * 3 + 1];
 									//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex + originalWidth*zoomFactor * 3 + 2];
 								}
 								else {
 									// Down
-									if (fillPixelIndex - originalWidth*zoomFactor * 3 >= 0 && zoom[fillPixelIndex - originalWidth*zoomFactor * 3] != 0) {
-										zoom[fillPixelIndex] = zoom[fillPixelIndex - originalWidth*zoomFactor * 3];
-										zoom[fillPixelIndex + 1] = zoom[fillPixelIndex - originalWidth*zoomFactor * 3 + 1];
+									if (fillPixelIndex - windowWidth*zoomFactor * 3 >= 0 && zoom[fillPixelIndex - windowWidth*zoomFactor * 3] != 0) {
+										zoom[fillPixelIndex] = zoom[fillPixelIndex - windowWidth*zoomFactor * 3];
+										zoom[fillPixelIndex + 1] = zoom[fillPixelIndex - windowWidth*zoomFactor * 3 + 1];
 										//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex - originalWidth*zoomFactor * 3 + 2];
 									}
 								}
@@ -268,6 +269,7 @@ static unsigned char* zoomImage(unsigned char* image_data, int originalHeight, i
 
 	return zoom;
 }
+*/
 
 int main()
 {
@@ -283,7 +285,7 @@ int main()
 
 	windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
 
-	//image = zoomImage(image, windowHeight, windowWidth, zoomfactor);
+	ZoomImage(image, windowHeight, windowWidth, zoomfactor);
 
 	writeBMP(image, windowWidth*zoomfactor, windowHeight*zoomfactor);
 
