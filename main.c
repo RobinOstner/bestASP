@@ -11,7 +11,7 @@
 
 extern void windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
 
-extern void ZoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
+extern unsigned char* ZoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
 
 void writeBMP(unsigned char* image_data, int w, int h) {
 	//header und infoheader nach wikipedia definition
@@ -52,6 +52,7 @@ void writeBMP(unsigned char* image_data, int w, int h) {
 	fwrite(bmpinfoheader, 1, 40, f);
 
 	unsigned char buffer[1] = { 0 };
+
 
 	if (w % 4 == 0) {
 		//schreiben des Bildes
@@ -170,8 +171,9 @@ static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos,
 }
 */
 
+
 /*
-static unsigned char* zoomImage(unsigned char* image_data, int windowHeight, int windowWidth, int zoomFactor) {
+static unsigned char* zoomImage(unsigned char* image_data, int windowWidth, int windowHeight, int zoomFactor) {
 	// Allocate memory to store image data (non-padded)
 	unsigned char* zoom = (unsigned char *)malloc(windowHeight*windowWidth * zoomFactor * zoomFactor * 3 * sizeof(unsigned char));
 	
@@ -277,15 +279,27 @@ int main()
 
 	readBmp(filename);
 
-	int windowWidth = 200;
-	int windowHeight = 200;
+	int windowWidth = 512;
+	int windowHeight = 512;
 	int xOffset = 0;
 	int yOffset = 0;
-	int zoomfactor = 1;
+	int zoomfactor = 3;
 
 	windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
 
-	ZoomImage(image, windowHeight, windowWidth, zoomfactor);
+	printf("Window:\n");
+
+	for (int i = 0; i < windowWidth && i < windowHeight; i++) {
+		printf("%d: %d\n", i, image[i*i * 3]);
+	}
+
+	image = ZoomImage(image, windowHeight, windowWidth, zoomfactor);
+
+	printf("Zoom:\n");
+
+	for (int i = 0; i < windowWidth && i < windowHeight; i++) {
+			printf("%d: %d\n", i, image[i*i * 3]);
+	}
 
 	writeBMP(image, windowWidth*zoomfactor, windowHeight*zoomfactor);
 
