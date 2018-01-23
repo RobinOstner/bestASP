@@ -86,8 +86,11 @@ zoomImage:
 		blt pixelLoopX
 	
 	
-	;# TODO
-	;# FILL LOOP
+;# TODO
+	
+	;# FILL 
+	mul r2, r2, r4
+	mul r3, r3, r4
 	mov r5, #0		;# Loop Counter
 	fillLoopX:
 
@@ -106,6 +109,7 @@ zoomImage:
 		cmp r5, r2
 		blt fillLoopX
 
+;# END OF TODO
 	
 	end:
 		mov r0, r1
