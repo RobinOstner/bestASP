@@ -15,7 +15,7 @@ ZoomImage:
 
 	ldr r1, =Array		;# Load Array for new Image
 
-	
+
 	mov r5, #0		;# Loop Counter
 
 pixelLoopX:
@@ -47,20 +47,19 @@ pixelLoopY:
 
 
 		# Load & Store Colors
-		ldr r9, [r0, r8]
+		ldrb r9, [r0, r8]
 		str r9, [r1, r7]
 
 		add r8, r8, #1
 		add r7, r7, #1
-		ldr r9, [r0, r8]
+		ldrb r9, [r0, r8]
 		str r9, [r1, r7]
 		
 		add r8, r8, #1
 		add r7, r7, #1
-		ldr r9, [r0, r8]
+		ldrb r9, [r0, r8]
 		str r9, [r1, r7]
-
-
+		
 		;# pixelLoopY
 		add r6, r6, #1
 		cmp r6, r3
@@ -74,16 +73,13 @@ pixelLoopY:
 end:
 	mov r0, r1
 
-
 	;# Stack wiederherstellen
 	POP {r4-r10, lr}
 	BX lr
 
-
-
 ;# Array
 .data
-.balign 4
-Array: .skip 48000000	;# Enough for 2000x2000
+.balign 1
+Array: .zero 48000000	;# Enough for 2000x2000
 
 addr_of_Array: .word Array
