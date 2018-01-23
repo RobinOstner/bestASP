@@ -11,7 +11,7 @@
 
 extern void windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
 
-extern unsigned char* ZoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
+extern unsigned char* zoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
 
 void writeBMP(unsigned char* image_data, int w, int h) {
 	//header und infoheader nach wikipedia definition
@@ -275,7 +275,7 @@ static unsigned char* zoomImage(unsigned char* image_data, int windowWidth, int 
 
 int main()
 {
-	char* filename = "Confirm-512.bmp";
+	char* filename = "lena.bmp";
 
 	readBmp(filename);
 
@@ -293,7 +293,7 @@ int main()
 		printf("%d: %d\n", i, image[i * 3]);
 	}
 
-	image = ZoomImage(image, windowHeight, windowWidth, zoomfactor);
+	image = zoomImage(image, windowHeight, windowWidth, zoomfactor);
 
 	printf("Zoom:\n");
 
