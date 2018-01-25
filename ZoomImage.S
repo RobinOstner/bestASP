@@ -18,14 +18,14 @@ zoomImage:
 	
 	mov r10, r0		;# r0 in r10 zwischenspeichern
 	
-	;# Groesse: width * height * (scale*scale) * 3
+	;# Groesse: width * height * (scale*scale) * 3 (bytes)
 	mul r0, r2, r3
 	mul r0, r0, r4
 	mul r0, r0, r4
-	mov r12, #3		;# immediate RIP
+	mov r12, #3		;# immediate zwischenspeichern
 	mul r0, r0, r12
 	
-	push {r1-r3}	;# do stuff
+	push {r1-r3}	
 	bl malloc
 	pop {r1-r3}
 	mov r1, r0		;# move new pointer to r1
@@ -33,10 +33,10 @@ zoomImage:
 	mov r0, r10		;# undo zwischenspeichern
 
 
-	mov r5, #0		;# Loop Counter
+	mov r5, #0		;# Loop Counter X
 	pixelLoopX:
 
-		mov r6, #0		;# Loop Counter
+		mov r6, #0		;# Loop Counter Y
 		pixelLoopY:
 		
 			;# Calc 1: pixelX*zoomFactor
@@ -89,12 +89,14 @@ zoomImage:
 ;# TODO
 	
 	;# FILL 
-	mul r2, r2, r4
-	mul r3, r3, r4
-	mov r5, #0		;# Loop Counter
+	mul r2, r2, r4	;# Scale width with scale-factor
+	mul r3, r3, r4	;# Scale with scale-factor
+	mov r0, r1		;# Copy pointer
+	
+	mov r5, #0		;# Loop Counter X
 	fillLoopX:
 
-		mov r6, #0		;# Loop Counter
+		mov r6, #0		;# Loop Counter  Y
 		fillLoopY:
 		
 			

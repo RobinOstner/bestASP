@@ -9,9 +9,9 @@
 
 //using namespace std;
 
-extern void windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
+//extern void windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
 
-extern unsigned char* zoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
+//extern unsigned char* zoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
 
 void writeBMP(unsigned char* image_data, int w, int h) {
 	//header und infoheader nach wikipedia definition
@@ -147,7 +147,7 @@ static void readBmp(char *filename)
 	fclose(file);
 }
 
-/*
+
 static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth) {
 
 	// Allocate memory to store image data (non-padded)
@@ -169,10 +169,8 @@ static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos,
 
 	return window;
 }
-*/
 
 
-/*
 static unsigned char* zoomImage(unsigned char* image_data, int windowWidth, int windowHeight, int zoomFactor) {
 	// Allocate memory to store image data (non-padded)
 	unsigned char* zoom = (unsigned char *)malloc(windowHeight*windowWidth * zoomFactor * zoomFactor * 3 * sizeof(unsigned char));
@@ -211,67 +209,27 @@ static unsigned char* zoomImage(unsigned char* image_data, int windowWidth, int 
 		}
 	}
 
-	for (int i = 0; i < zoomFactor - 1; i++){
-
-		// Loop over all original pixels
-		for (int pixelX = 0; pixelX < windowWidth; pixelX++) {
-			for (int pixelY = 0; pixelY < windowHeight; pixelY++) {
-
-				// The index in the array for the current pixel
-				int pixelIndex = pixelX*zoomFactor * 3 + pixelY*zoomFactor*zoomFactor*windowWidth * 3;
-
-				// Fill the rest
-				for (int x = -i; x < i; x++) {
-					for (int y = -i; y < i; y++) {
-						if (x == 0 && y == 0) {
-							continue;
-						}
-
-						int fillPixelIndex = pixelIndex + x * 3 + y*zoomFactor*windowWidth * 3;
-
-						if (fillPixelIndex < 0) { continue; }
-						if (zoom[fillPixelIndex] != 0) { continue; }
-
-						// Left
-						if (fillPixelIndex-3 > 0 && zoom[fillPixelIndex - 3] != 0) {
-							zoom[fillPixelIndex] = zoom[fillPixelIndex - 3];
-							zoom[fillPixelIndex + 1] = zoom[fillPixelIndex - 2];
-							//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex - 1];
-						}
-						else {
-							// Right
-							if (fillPixelIndex + 3 < windowWidth*zoomFactor && zoom[fillPixelIndex + 3] != 0) {
-								zoom[fillPixelIndex] = zoom[fillPixelIndex - 3];
-								zoom[fillPixelIndex + 1] = zoom[fillPixelIndex - 2];
-								//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex - 1];
-							}
-							else {
-								// Up
-								if (fillPixelIndex + windowWidth*zoomFactor * 3 < windowWidth * windowHeight* zoomFactor * zoomFactor * 3 && zoom[fillPixelIndex + windowWidth*zoomFactor * 3] != 0) {
-									zoom[fillPixelIndex] = zoom[fillPixelIndex + windowWidth*zoomFactor * 3];
-									zoom[fillPixelIndex + 1] = zoom[fillPixelIndex + windowWidth*zoomFactor * 3 + 1];
-									//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex + originalWidth*zoomFactor * 3 + 2];
-								}
-								else {
-									// Down
-									if (fillPixelIndex - windowWidth*zoomFactor * 3 >= 0 && zoom[fillPixelIndex - windowWidth*zoomFactor * 3] != 0) {
-										zoom[fillPixelIndex] = zoom[fillPixelIndex - windowWidth*zoomFactor * 3];
-										zoom[fillPixelIndex + 1] = zoom[fillPixelIndex - windowWidth*zoomFactor * 3 + 1];
-										//zoom[fillPixelIndex + 2] = zoom[fillPixelIndex - originalWidth*zoomFactor * 3 + 2];
-									}
-								}
-							}
-						}
-					}
-				}
-
-			}
+	// Fill loop
+	windowWidth *= zoomFactor;
+	windowHeight *= zoomFactor;
+	for(int pixelX = 0; pixelX < windowWidth; pixelX++){
+		for (int pixelY = 0; pixelY < windowHeight; pixelY++) {
+			
+			int parentX = pixelX - ((pixelX + 1) % zoomFactor) + 1;
+			int parentY = pixelY - ((pixelY + 1) % zoomFactor) + 1;
+			
+			if(parentX == windowWidth) parentX -= zoomFactor;
+			if(parentY == windowHeight) parentY -= zoomFactor;
+				
+			zoom[pixelX * 3 + pixelY*windowWidth * 3] = zoom[parentX * 3 + parentY*windowWidth * 3];
+			zoom[pixelX * 3 + pixelY*windowWidth * 3 + 1] = zoom[parentX * 3 + parentY*windowWidth * 3 + 1];
+			zoom[pixelX * 3 + pixelY*windowWidth * 3 + 2] = zoom[parentX * 3 + parentY*windowWidth * 3 + 2];
+			
 		}
 	}
-
 	return zoom;
 }
-*/
+
 
 int main()
 {
@@ -283,7 +241,7 @@ int main()
 	int windowHeight = 512;
 	int xOffset = 0;
 	int yOffset = 0;
-	int zoomfactor = 7;
+	int zoomfactor = 1;
 
 	windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
 
