@@ -84,14 +84,11 @@ zoomImage:
 		add r5, r5, #1
 		cmp r5, r2
 		blt pixelLoopX
-	
-	
-;# TODO
+
 	
 	;# FILL 
 	mul r2, r2, r4	;# Scale width with scale-factor
-	mul r3, r3, r4	;# Scale with scale-factor
-	mov r0, r1		;# Copy pointer
+	mul r3, r3, r4	;# Scale height with scale-factor
 	
 	mov r5, #0		;# Loop Counter X
 	fillLoopX:
@@ -99,7 +96,45 @@ zoomImage:
 		mov r6, #0		;# Loop Counter  Y
 		fillLoopY:
 		
+			;# parentX coord
+			add r12, r5, #1
+			sdiv r7, r12, r4
+			mul r7, r7, r4
+			;# parentY coord
+			add r12, r6, #1
+			sdiv r8, r12, r4
+			mul r8, r8, r4
 			
+			;# check out of bounds
+			cmp r7, r2
+			subeq r7, r7, r4
+			cmp r8, r3
+			subeq r8, r8, r4
+			
+			;# map pixel onto array
+			mov r12, #3
+			mul r9, r6, r2
+			add r9, r9, r5
+			mul r9, r9, r12
+			
+			;# map parent onto array
+			mul r8, r8, r2
+			add r8, r8, r7
+			mul r8, r8, r12
+			
+			;# Load & Store Colors
+			ldrb r10, [r1, r8]
+			str r10, [r1, r9]
+
+			add r8, r8, #1
+			add r9, r9, #1
+			ldrb r10, [r1, r8]
+			str r10, [r1, r9]
+			
+			add r8, r8, #1
+			add r9, r9, #1
+			ldrb r10, [r1, r8]
+			str r10, [r1, r9]
 			
 			;# pixelLoopY
 			add r6, r6, #1
@@ -110,8 +145,6 @@ zoomImage:
 		add r5, r5, #1
 		cmp r5, r2
 		blt fillLoopX
-
-;# END OF TODO
 	
 	end:
 		mov r0, r1
