@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-extern void windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
+extern unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
 
 extern unsigned char* zoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
 
@@ -215,12 +215,12 @@ int main()
 	readBmp(filename);
 
 	int windowWidth = 512;
-	int windowHeight = 512;
+	int windowHeight = 355;
 	int xOffset = 0;
 	int yOffset = 0;
 	int zoomfactor = 5;
 
-	windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	image = windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
 
 	printf("Window:\n");
 

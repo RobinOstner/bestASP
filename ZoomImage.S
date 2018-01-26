@@ -11,8 +11,9 @@ zoomImage:
 
 	;# Change Position of Input data
 	mov r4, r3
-	mov r3, r2
-	mov r2, r1
+	mov r2, r2
+	mov r3, r1
+	;# Swapped width height for testing
 
 	;# Malloc for new Image
 	

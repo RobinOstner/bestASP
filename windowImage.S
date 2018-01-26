@@ -85,8 +85,9 @@ windowImage:
 
 			;# r2 is the index of the current Pixel
 
-			mul r12, r9, r6
-			add r12, r12, r8
+			;# index new image
+			mul r12, r8, r6
+			add r12, r12, r9
 			mul r12, r12, r5	;# die #3 von vorhin
 			add r1, r10, r12
 			
