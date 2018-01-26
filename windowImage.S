@@ -44,7 +44,7 @@ windowImage:
 	
 	;# last pointer of new array
 	add r4, r4, r10
-	
+
 	;# LoopY
 	mov r8, #0
 	schleifeX:
@@ -106,18 +106,19 @@ windowImage:
 			
 			SISD:
 			b continue
-			
+
 			continue:
-			
+
 			;# loopX
 			add r9, r9, #8
-			cmp r9, r7
+			cmp r9, r6
 			blt schleifeY
 
 		;# loopY
 		add r8, r8, #1
-		cmp r8, r6
+		cmp r8, r7
 		blt schleifeX
+
 
 	mov r0, r10 ;# return
 
