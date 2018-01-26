@@ -287,10 +287,6 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
-Makefile
-
-lena\.bmp
-
 Copy\.bmp
 
 Copy2\.bmp
