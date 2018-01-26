@@ -1,13 +1,7 @@
 // BMP.cpp : Definiert den Einstiegspunkt für die Konsolenanwendung.
 //
-
-//#include <stdafx.h>
 #include <stdlib.h>
 #include <stdio.h>
-//#include <vector>
-//#include <iterator>
-
-//using namespace std;
 
 extern void windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
 
@@ -125,23 +119,6 @@ static void readBmp(char *filename)
 	unsigned char* data = (unsigned char *)malloc(widthnew * sizeof(unsigned int));
 
 	fread(image, 3, width*height, file);
-
-	//// Read row by row of data and remove padded data.
-	//for (int i = 0; i<height; i++)
-	//{
-	//	// Read widthnew length of data
-	//	fread(data, sizeof(unsigned char), widthnew, file);
-
-	//	// Retain width length of data, and swizzle RB component.
-	//	// BMP stores in BGR format, my usecase needs RGB format
-	//	for (int j = 0; j < width * 3; j += 3)
-	//	{
-	//		int index = (i * width * 3) + (j);
-	//		image[index + 0] = data[j + 0];
-	//		image[index + 1] = data[j + 1];
-	//		image[index + 2] = data[j + 2];
-	//	}
-	//}
 
 	free(data);
 	fclose(file);
