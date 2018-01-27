@@ -269,6 +269,14 @@ int main(int argc, char** argv)
 			
 		printf("Invalid input: Negative input!\n");
 		return -1;
+	}else if(windowHeight==0 ||
+		windowWidth==0 ||
+		xOffset==0 ||
+		yOffset==0 ||
+		zoomfactor==0){
+			
+		printf("Invalid input: 0 is not valid!\n");
+		return -1;
 	}
 
 
