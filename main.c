@@ -2,10 +2,12 @@
 //
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 extern unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
-
 extern unsigned char* zoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
+
+#define INPUT_ERROR printf("Incorrect input.\n"); return -1;
 
 void writeBMP(unsigned char* image_data, int w, int h) {
 	//header und infoheader nach wikipedia definition
@@ -77,14 +79,13 @@ void writeBMP(unsigned char* image_data, int w, int h) {
 static unsigned char *image;
 static int width, height;
 
-static void readBmp(char *filename)
+static int readBmp(char *filename)
 {
 	FILE *file;
 	file = fopen(filename, "rb");
 	if (file == NULL)
 	{
-		printf("Error: fopen failed\n");
-		return;
+		INPUT_ERROR
 	}
 
 	unsigned char header[54];
@@ -112,7 +113,7 @@ static void readBmp(char *filename)
 	if (image == NULL)
 	{
 		printf("Error: Malloc failed\n");
-		return;
+		return -2;
 	}
 
 	// Allocate temporary memory to read widthnew size of data
@@ -122,6 +123,7 @@ static void readBmp(char *filename)
 
 	free(data);
 	fclose(file);
+	return 0;
 }
 
 /*
@@ -208,17 +210,68 @@ static unsigned char* zoomImage(unsigned char* image_data, int windowWidth, int 
 }
 */
 
-int main()
+int main(int argc, char** argv)
 {
+	// initial values
 	char* filename = "lena.bmp";
-
-	readBmp(filename);
-
-	int windowWidth = 388;
-	int windowHeight = 261;
+	int windowWidth = 512;
+	int windowHeight = 512;
 	int xOffset = 0;
 	int yOffset = 0;
-	int zoomfactor = 5;
+	int zoomfactor = 3;
+	
+	// get command line arguments
+	// EXAMPLE: -dimen 512 512 -offset 0 0 -file yolo.jpeg -scale 3
+	for(int i = 1; i < argc; i++){
+		if(0 == strcmp(argv[i], "-file")){
+			if(i+1 >= argc){INPUT_ERROR}
+			
+			filename = argv[++i];
+		}
+		else if(0 == strcmp(argv[i], "-dimen")){
+			if(i+2 >= argc){INPUT_ERROR}
+			
+			windowWidth = atoi(argv[++i]);
+			windowHeight = atoi(argv[++i]);
+		}
+		else if(0 == strcmp(argv[i], "-offset")){
+			if(i+2 >= argc){INPUT_ERROR}
+			
+			xOffset = atoi(argv[++i]);
+			yOffset = atoi(argv[++i]);
+		}
+		else if(0 == strcmp(argv[i], "-scale")){
+			if(i+1 >= argc){INPUT_ERROR}
+			
+			zoomfactor = atoi(argv[++i]);
+		}else{INPUT_ERROR}
+	}
+	
+	// read bitmap and check for incorrect input
+	if(-1 == readBmp(filename)) return -1;
+	
+	// make sure input was valid
+	if(windowHeight > height || windowWidth > width){
+		
+		printf("Invalid input: Dimensions too large!\n");
+		return -1;
+		
+	}else if((windowHeight+yOffset) > height || (windowWidth+xOffset) > width){
+		
+		printf("Invalid input: Offset or dimensions too large!\n");
+		return -1;
+		
+	}else if(windowHeight<0 ||
+		windowWidth<0 ||
+		xOffset<0 ||
+		yOffset<0 ||
+		zoomfactor<0){
+			
+		printf("Invalid input: Negative input!\n");
+		return -1;
+	}
+
+
 
 	image = windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
 
@@ -242,4 +295,5 @@ int main()
 
     return 0;
 }
+
 
