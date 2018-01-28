@@ -3,9 +3,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 
-extern unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
-extern unsigned char* zoomImage(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
+extern unsigned char* window(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
+extern unsigned char* zoom(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
+extern unsigned char* windowSISD(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
+extern unsigned char* zoomSISD(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
 
 #define INPUT_ERROR printf("Incorrect input.\n"); return -1;
 
@@ -126,8 +130,8 @@ static int readBmp(char *filename)
 	return 0;
 }
 
-/*
-static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth) {
+
+static unsigned char* windowC(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth) {
 
 	// Allocate memory to store image data (non-padded)
 	unsigned char* window = (unsigned char *)malloc(width * height * 3 * sizeof(unsigned char));
@@ -150,7 +154,7 @@ static unsigned char* windowImage(unsigned char* image_data, int xPos, int yPos,
 }
 
 
-static unsigned char* zoomImage(unsigned char* image_data, int windowWidth, int windowHeight, int zoomFactor) {
+static unsigned char* zoomC(unsigned char* image_data, int windowWidth, int windowHeight, int zoomFactor) {
 	// Allocate memory to store image data (non-padded)
 	unsigned char* zoom = (unsigned char *)malloc(windowHeight*windowWidth * zoomFactor * zoomFactor * 3 * sizeof(unsigned char));
 	
@@ -208,7 +212,15 @@ static unsigned char* zoomImage(unsigned char* image_data, int windowWidth, int 
 	}
 	return zoom;
 }
-*/
+
+
+// Zeit in Sekunden
+double getTimeSeconds()
+{
+	struct timespec now;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &now);
+	return now.tv_sec + (now.tv_nsec * 1E-9);
+}
 
 int main(int argc, char** argv)
 {
@@ -271,31 +283,75 @@ int main(int argc, char** argv)
 		return -1;
 	}else if(windowHeight==0 ||
 		windowWidth==0 ||
-		xOffset==0 ||
-		yOffset==0 ||
 		zoomfactor==0){
 			
 		printf("Invalid input: 0 is not valid!\n");
 		return -1;
 	}
 
+	double timeBefore, timeAfter;
+	timeBefore = getTimeSeconds();
+	windowC(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	timeAfter = getTimeSeconds();
+	printf("window: Time taken: C-Version: %8.8f\n", (timeAfter-timeBefore));
+	timeBefore = getTimeSeconds();
+	windowSISD(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	timeAfter = getTimeSeconds();
+	printf("window: Time taken: SISD-Version: %8.8f\n", (timeAfter-timeBefore));
+	timeBefore = getTimeSeconds();
+	window(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	timeAfter = getTimeSeconds();
+	printf("window: Time taken: SIMD-Version: %8.8f\n", (timeAfter-timeBefore));
+	
+	/*	Alternative
+	struct timeval t0, t1;
+	gettimeofday(&t0, NULL);
+	windowC(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	gettimeofday(&t1, NULL);
+	printf("window: Time taken: C-Version: %.2g seconds\n", t1.tv_sec - t0.tv_sec + 1E-6 * (t1.tv_usec - t0.tv_usec));
+	gettimeofday(&t0, NULL);
+	windowSISD(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	gettimeofday(&t1, NULL);
+	printf("window: Time taken: SISD-Version: %.2g seconds\n", t1.tv_sec - t0.tv_sec + 1E-6 * (t1.tv_usec - t0.tv_usec));
+	gettimeofday(&t0, NULL);
+	window(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	gettimeofday(&t1, NULL);
+	printf("window: Time taken: SIMD-Version: %.2g seconds\n", t1.tv_sec - t0.tv_sec + 1E-6 * (t1.tv_usec - t0.tv_usec));
+	*/
+	
+	// Actual calculation
+	image = window(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	
+	//printf("Window:\n");
 
+	//for (int i = 0; i < windowWidth*zoomfactor && i < windowHeight*zoomfactor; i++) {
+	//	printf("%d: %d\n", i, image[i * 3]);
+	//}
 
-	image = windowImage(image, xOffset, yOffset, windowWidth, windowHeight, width);
+	
+	timeBefore = getTimeSeconds();
+	zoomC(image, windowHeight, windowWidth, zoomfactor);
+	timeAfter = getTimeSeconds();
+	printf("zoom: Time taken: C-Version: %8.8f\n", (timeAfter-timeBefore));
+	
+	timeBefore = getTimeSeconds();
+	zoomSISD(image, windowHeight, windowWidth, zoomfactor);
+	timeAfter = getTimeSeconds();
+	printf("zoom: Time taken: SISD-Version: %8.8f\n", (timeAfter-timeBefore));
+	
+	timeBefore = getTimeSeconds();
+	zoom(image, windowHeight, windowWidth, zoomfactor);
+	timeAfter = getTimeSeconds();
+	printf("zoom: Time taken: SIMD-Version: %8.8f\n", (timeAfter-timeBefore));
 
-	printf("Window:\n");
+	// Actual calculation
+	image = zoom(image, windowHeight, windowWidth, zoomfactor);
+	
+	//printf("Zoom:\n");
 
-	for (int i = 0; i < windowWidth*zoomfactor && i < windowHeight*zoomfactor; i++) {
-		printf("%d: %d\n", i, image[i * 3]);
-	}
-
-	image = zoomImage(image, windowHeight, windowWidth, zoomfactor);
-
-	printf("Zoom:\n");
-
-	for (int i = 0; i < windowWidth*zoomfactor && i < windowHeight*zoomfactor; i++) {
-			printf("%d: %d\n", i, image[i*i * 3]);
-	}
+	//for (int i = 0; i < windowWidth*zoomfactor && i < windowHeight*zoomfactor; i++) {
+	//		printf("%d: %d\n", i, image[i*i * 3]);
+	//}
 
 	writeBMP(image, windowWidth*zoomfactor, windowHeight*zoomfactor);
 

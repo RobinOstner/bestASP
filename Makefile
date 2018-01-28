@@ -7,7 +7,7 @@ COPTS=-g -mcpu=cortex-a53 -mfpu=neon -mfloat-abi=hard -marm -o $(TARGET) -O$(OPT
 
 all: bin
 
-bin: main.c windowImage.S zoomImage.S
+bin: main.c window.S zoom.S windowSISD.S zoomSISD.S
 	$(CC) $(COPTS) $+ 
 
 clean:

@@ -1,9 +1,9 @@
-.global windowImage
+.global window
 .extern malloc
 
 .code 32
 
-windowImage:
+window:
 
 	;# Sichern der benoetigten Register
 	PUSH {r4-r10, lr}

@@ -1,8 +1,8 @@
-.global windowImage
+.global windowSISD
 
 .code 32
 
-windowImage:
+windowSISD:
 
 	;# Sichern der benoetigten Register
 	PUSH {r4-r10, lr}

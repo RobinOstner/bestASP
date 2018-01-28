@@ -1,17 +1,16 @@
-.global zoomImage
+.global zoomSISD
 .extern malloc
 
 .code 32
 
 
-zoomImage:
+zoomSISD:
 
 	;# Sichern der benoetigten Register
 	PUSH {r4-r10, lr}
 
 	;# Change Position of Input data
 	mov r4, r3
-	mov r2, r2
 	mov r3, r1
 	;# Swapped width height for testing
 
