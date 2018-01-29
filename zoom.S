@@ -35,11 +35,14 @@ zoom:
 	mul r11, r11, r12	;# Size of old pic in bytes
 	add r11, r11, r0	;# to pointer
 	
-	add r6, r1, #0
-	add r5, r0, #0		;# Loop Counter
+	mov r12, #3
 	mul r7, r4, r12
-	mul r12, r7, r4
-	mul r12, r12, r2
+	mul r12, r7, r2
+	sub r5, r4, #1
+	mul r12, r12, r5
+	
+	mov r6, r1
+	mov r5, r0			;# Loop Counter
 	mov r8, #0
 	loop:
 	
@@ -54,9 +57,9 @@ zoom:
 		
 		;# loop
 		add r5, r5, #3
+		add r6, r6, r7
 		add r8, r8, #1
 		cmp r8, r2
-		addlt r6, r6, r7
 		addge r6, r6, r12
 		movge r8, #0
 		cmp r5, r11
