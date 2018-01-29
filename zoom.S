@@ -30,118 +30,89 @@ zoom:
 	mov r1, r0		;# move new pointer to r1
 	
 	mov r0, r10		;# undo zwischenspeichern
+	
+	mov r9, #3
+	mul r9, r9, r4
+	mov r12, #0
+	vmov s4, r12
+	add r12, r12, r9
+	vmov s5, r12
+	add r12, r12, r9
+	vmov s6, r12
+	add r12, r12, r9
+	vmov s7, r12
 
+	mov r12, #0
+	vmov s8, r12
+	mov r12, #3
+	vmov s9, r12
+	mov r12, #6
+	vmov s10, r12
+	mov r12, #9
+	vmov s11, r12
+	
+	;# q3
+	mov r12, #4
+	mul r12, r12, r9
+	vdup.32 q3, r12
+	
+	mov r12, #12
+	vdup.32 q4, r12
 
-	mov r5, #0		;# Loop Counter X
-	pixelLoopX:
-
-		mov r6, #0		;# Loop Counter Y
-		pixelLoopY:
+	mov r5, #0		;# Loop Counter
+	loop:
+	
+		mov r12, #0 ;# loop counter
 		
-;# Old code
-;#			;# Calc 1: pixelX*zoomFactor
-;#			mul r7, r5, r4
-;#
-;#			;# Calc 2: pixelY*zoomFactor*zoomFactor*windowWidth
-;#			mul r8, r6, r4
-;#			mul r8, r8, r4
-;#			mul r8, r8, r2
-;#
-;#			;# Add Up and Mul by 3 to get Pixel Coordinate: 
-;#			;# (pixelX*zoomFactor + pixelY*zoomFactor*zoomFactor*windowWidth) * 3
-;#			add r7, r7, r8
-;#			mov r8, #3
-;#			mul r7, r7, r8		;# r7 is now the PixelIndex of the new Image
-;#			
-;#
-;#			;# Calc3: (pixelX + pixelY*windowWidth) * 3
-;#			mul r8, r6, r2
-;#			add r8, r8, r5
-;#			mov r9, #3
-;#			mul r8, r8, r9		;# r8 is now the Index of the pixel on the old Image
+		vmov.u32 r7, d2[0]	;# load first indices
+		vmov.u32 r8, d4[0] 	;# -"-
+		SISD_LS:	;# Load and Store Colors
+			;#cmp  r7, r11
+			;#bge exitLoop ;# if out of bounds, stop.
+			;# TODO (above line not working)
+			
+			ldrb r9, [r0, r8]
+			strb r9, [r1, r7]
+			add r8, r8, #1
+			add r7, r7, #1
+			ldrb r9, [r0, r8]
+			strb r9, [r1, r7]
+			add r8, r8, #1
+			add r7, r7, #1
+			ldrb r9, [r0, r8]
+			strb r9, [r1, r7]
+			
+			;# loop 4 times
+			add r12, r12, #1
+			cmp r12, #2
+			blt load1
+			beq load2
+			bge load3
+			
+			load1:
+				vmov.u32 r7, d2[1]
+				vmov.u32 r8, d4[1]
+				b SISD_LS			;# jump without condition, because eq & lt 2 ist <4
+			load2:
+				vmov.u32 r7, d3[0]
+				vmov.u32 r8, d5[0]
+				b SISD_LS			;# jump without condition, because eq & lt 2 ist <4
+			load3:
+				cmp r12, #4
+				bge exitLS
+				vmov.u32 r7, d3[1]
+				vmov.u32 r8, d5[1]
+				b SISD_LS
+		
+		exitLS:
 
-			;# SIMD
-			vdup.32 q1, r4			;# zoomFactor
-			vdup.32 q2, r5			;# pixelX
+		vadd.u32 q1, q1, q3
+		vadd.u32 q2, q2, q4
 			
-			vmov s12, r6			;# q3 = pixelY
-			add r6, r6, #1
-			vmov s13, r6
-			add r6, r6, #1
-			vmov s14, r6
-			add r6, r6, #1
-			vmov s15, r6
-			
-			vdup.32 q4, r2			;# windowWidth
-			vmul.u32 q6, q3, q1
-			vmul.u32 q6, q6, q4	;# pixelY*zoomFactor*windowWidth
-			
-			vadd.u32 q6, q6, q2
-			vmul.u32 q6, q6, q1	;# * zoomFactor
-			mov r12, #3
-			vdup.32 q5, r12			;# 3
-			;# q6: pixel index of new image
-			vmul.u32 q6, q6, q5	;# (pixelX + pixelY*zoomFactor*windowWidth) * 3 * zoomFactor
-BREAK:
-			vmul.u32 q7, q3, q4	;# pixelY*windowWidth
-			vadd.u32 q7, q7, q2	;# pixelX + pixelY*windowWidth
-			;# q7: pixel index of new image
-			vmul.u32 q7, q7, q5	;# (pixelX + pixelY*windowWidth) * 3
-			
-
-			mov r12, #0 ;# loop counter
-			
-			vmov.u32 r7, d12[0]	;# load first indices
-			vmov.u32 r8, d14[0] 	;# -"-
-			SISD_LS:	;# Load and Store Colors
-				cmp  r7, r11
-				;#bge exitLoop ;# if out of bounds, stop.
-				;# TODO (above line not working)
-				
-				ldrb r9, [r0, r8]
-				strb r9, [r1, r7]
-				add r8, r8, #1
-				add r7, r7, #1
-				ldrb r9, [r0, r8]
-				strb r9, [r1, r7]
-				add r8, r8, #1
-				add r7, r7, #1
-				ldrb r9, [r0, r8]
-				strb r9, [r1, r7]
-				
-				;# loop 4 times
-				add r12,  r12, #1
-				cmp r12, #2
-				blt load1
-				beq load2
-				bge load3
-				
-				load1:
-					vmov.u32 r7, d12[1]
-					vmov.u32 r8, d14[1]
-					b SISD_LS			;# jump without condition, because eq & lt 2 ist <4
-				load2:
-					vmov.u32 r7, d13[0]
-					vmov.u32 r8, d15[0]
-					b SISD_LS			;# jump without condition, because eq & lt 2 ist <4
-				load3:
-					cmp r12, #4
-					bge exitLoop
-					vmov.u32 r7, d13[1]
-					vmov.u32 r8, d15[1]
-					b SISD_LS
-			
-			exitLoop:
-			
-			;# pixelLoopY
-			add r6, r6, #1
-			cmp r6, r3
-			blt pixelLoopY
-
-		;# pixelLoopX
-		add r5, r5, #1
-		cmp r5, r2
-		blt pixelLoopX
+		;# loop
+		add r5, r5, #12
+		cmp r5, r11
+		blt loop
 
 	
 	;# FILL 
