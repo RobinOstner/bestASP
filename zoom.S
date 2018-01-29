@@ -64,14 +64,13 @@ zoom:
 			vdup.32 q1, r4			;# zoomFactor
 			vdup.32 q2, r5			;# pixelX
 			
-			vdup.32 q3, r6			;# pixelY
-			mov r12, #1
-			vmov s1, r12
-			mov r12, #2
-			vmov s2, r12
-			mov r12, #3
-			vmov s3, r12
-			vadd.u32 q3, q3, q0	;# increment each
+			vmov s12, r6			;# q3 = pixelY
+			add r6, r6, #1
+			vmov s13, r6
+			add r6, r6, #1
+			vmov s14, r6
+			add r6, r6, #1
+			vmov s15, r6
 			
 			vdup.32 q4, r2			;# windowWidth
 			vmul.u32 q6, q3, q1
@@ -83,7 +82,7 @@ zoom:
 			vdup.32 q5, r12			;# 3
 			;# q6: pixel index of new image
 			vmul.u32 q6, q6, q5	;# (pixelX + pixelY*zoomFactor*windowWidth) * 3 * zoomFactor
-			
+BREAK:
 			vmul.u32 q7, q3, q4	;# pixelY*windowWidth
 			vadd.u32 q7, q7, q2	;# pixelX + pixelY*windowWidth
 			;# q7: pixel index of new image
@@ -133,7 +132,7 @@ zoom:
 					b SISD_LS
 			
 			;# pixelLoopY
-			add r6, r6, #4
+			add r6, r6, #1
 			cmp r6, r3
 			blt pixelLoopY
 
