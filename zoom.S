@@ -22,7 +22,6 @@ zoom:
 	mul r0, r0, r4
 	mov r12, #3		;# immediate zwischenspeichern
 	mul r0, r0, r12
-	mov r11, r0		;# save size
 	
 	push {r1-r3}	
 	bl malloc
@@ -31,90 +30,38 @@ zoom:
 	
 	mov r0, r10		;# undo zwischenspeichern
 	
-	mov r9, #3
-	mul r9, r9, r4
-	mov r12, #0
-	vmov s4, r12
-	add r12, r12, r9
-	vmov s5, r12
-	add r12, r12, r9
-	vmov s6, r12
-	add r12, r12, r9
-	vmov s7, r12
-
-	mov r12, #0
-	vmov s8, r12
+	mul r11, r2, r3
 	mov r12, #3
-	vmov s9, r12
-	mov r12, #6
-	vmov s10, r12
-	mov r12, #9
-	vmov s11, r12
+	mul r11, r11, r12	;# Size of old pic in bytes
+	add r11, r11, r0	;# to pointer
 	
-	;# q3
-	mov r12, #4
-	mul r12, r12, r9
-	vdup.32 q3, r12
-	
-	mov r12, #12
-	vdup.32 q4, r12
-
-	mov r5, #0		;# Loop Counter
+	add r6, r1, #0
+	add r5, r0, #0		;# Loop Counter
+	mul r7, r4, r12
+	mul r12, r7, r4
+	mul r12, r12, r2
+	mov r8, #0
 	loop:
 	
-		mov r12, #0 ;# loop counter
+		ldrb r9, [r5]
+		strb r9, [r6]
 		
-		vmov.u32 r7, d2[0]	;# load first indices
-		vmov.u32 r8, d4[0] 	;# -"-
-		SISD_LS:	;# Load and Store Colors
-			;#cmp  r7, r11
-			;#bge exitLoop ;# if out of bounds, stop.
-			;# TODO (above line not working)
-			
-			ldrb r9, [r0, r8]
-			strb r9, [r1, r7]
-			add r8, r8, #1
-			add r7, r7, #1
-			ldrb r9, [r0, r8]
-			strb r9, [r1, r7]
-			add r8, r8, #1
-			add r7, r7, #1
-			ldrb r9, [r0, r8]
-			strb r9, [r1, r7]
-			
-			;# loop 4 times
-			add r12, r12, #1
-			cmp r12, #2
-			blt load1
-			beq load2
-			bge load3
-			
-			load1:
-				vmov.u32 r7, d2[1]
-				vmov.u32 r8, d4[1]
-				b SISD_LS			;# jump without condition, because eq & lt 2 ist <4
-			load2:
-				vmov.u32 r7, d3[0]
-				vmov.u32 r8, d5[0]
-				b SISD_LS			;# jump without condition, because eq & lt 2 ist <4
-			load3:
-				cmp r12, #4
-				bge exitLS
-				vmov.u32 r7, d3[1]
-				vmov.u32 r8, d5[1]
-				b SISD_LS
+		ldrb r9, [r5, #1]
+		strb r9, [r6, #1]
 		
-		exitLS:
-
-		vadd.u32 q1, q1, q3
-		vadd.u32 q2, q2, q4
-			
+		ldrb r9, [r5, #2]
+		strb r9, [r6, #2]
+		
 		;# loop
-		add r5, r5, #12
+		add r5, r5, #3
+		add r8, r8, #1
+		cmp r8, r2
+		addlt r6, r6, r7
+		addge r6, r6, r12
+		movge r8, #0
 		cmp r5, r11
 		blt loop
-
-	
+		
 	;# FILL 
 	mul r2, r2, r4	;# Scale width with scale-factor
 	mul r3, r3, r4	;# Scale height with scale-factor
