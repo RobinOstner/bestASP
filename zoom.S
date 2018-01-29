@@ -131,6 +131,8 @@ BREAK:
 					vmov.u32 r8, d15[1]
 					b SISD_LS
 			
+			exitLoop:
+			
 			;# pixelLoopY
 			add r6, r6, #1
 			cmp r6, r3
@@ -141,7 +143,6 @@ BREAK:
 		cmp r5, r2
 		blt pixelLoopX
 
-	exitLoop:
 	
 	;# FILL 
 	mul r2, r2, r4	;# Scale width with scale-factor
