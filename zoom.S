@@ -64,6 +64,8 @@ zoom:
 		movge r8, #0
 		cmp r5, r11
 		blt loop
+
+	startFill:
 		
 	;# FILL 
 	mul r2, r2, r4	;# Scale width with scale-factor
@@ -74,6 +76,11 @@ zoom:
 
 		mov r5, #0		;# Loop Counter  X
 		fillLoopX:
+
+			add r5, r5, #4
+			cmp r5, r2
+			sub r5, r5, #4
+			bge SISD_FILL
 
 		fill:
 		
@@ -202,6 +209,48 @@ zoom:
 					vmov.u32 r8, d11[1] 
 					b SISD_LS 
 
+			SISD_FILL:
+			
+			add r12, r5, #1
+			sdiv r7, r12, r4
+			mul r7, r7, r4
+			;# parentY coord
+			add r12, r6, #1
+			sdiv r8, r12, r4
+			mul r8, r8, r4
+				
+			;# check out of bounds
+			cmp r7, r2
+			subeq r7, r7, r4
+			cmp r8, r3
+			subeq r8, r8, r4
+
+			;# map pixel onto array
+			mul r9, r6, r2
+			add r9, r9, r5
+			mov r12, #3
+			mul r9, r9, r12
+
+			;# map parent onto array
+			mul r8, r8, r2
+			add r8, r8, r7
+			mul r8, r8, r12
+
+			ldrb r12, [r1, r8] 
+			strb r12, [r1, r9] 
+			add r8, r8, #1 
+			add r9, r9, #1 
+			ldrb r12, [r1, r8] 
+			strb r12, [r1, r9] 
+			add r8, r8, #1 
+			add r9, r9, #1 
+			ldrb r12, [r1, r8] 
+			strb r12, [r1, r9] 
+
+			add r5, r5, #1
+			cmp r5, r2
+			blt fillLoopX
+
 			exitLoop:
 			
 			;# pixelLoopX
@@ -214,9 +263,12 @@ zoom:
 		cmp r6, r3
 		blt fillLoopY
 	
-	end:
+	endFill:
 		mov r0, r1
 
 		;# Stack wiederherstellen
 		POP {r4-r11, lr}
 		BX lr
+
+	jump:
+		b endFill

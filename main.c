@@ -66,7 +66,7 @@ void writeBMP(unsigned char* image_data, int w, int h) {
 		if(DEBUG) printf("Buffersize: %d\n", buffersize);
 
 		for (int y = 0; y < h; y++) {
-
+			if (DEBUG) printf("Start to write Row: %d\n", y);
 			//Write first line
 			fwrite(image_data, w, 3, f);
 
@@ -77,9 +77,17 @@ void writeBMP(unsigned char* image_data, int w, int h) {
 				// Fill with buffer
 				fwrite(buffer, 1, 1, f);
 			}
+
+			if (DEBUG) printf("Write Row: %d\n", y);
 		}
+		if (DEBUG) printf("All Rows Finished!\n");
 	}
+
+	if (DEBUG) printf("Write Finished!\n");
+
 	fclose(f);
+
+	if (DEBUG) printf("File Closed!\n");
 }
 
 static unsigned char *image;
@@ -123,11 +131,11 @@ static int readBmp(char *filename)
 	}
 
 	// Allocate temporary memory to read widthnew size of data
-	unsigned char* data = (unsigned char *)malloc(widthnew * sizeof(unsigned int));
+	//unsigned char* data = (unsigned char *)malloc(widthnew * sizeof(unsigned int));
 
 	fread(image, 3, width*height, file);
 
-	free(data);
+	//free(data);
 	fclose(file);
 	return 0;
 }
@@ -338,19 +346,19 @@ int main(int argc, char** argv)
 	switch(mode){
 		case 0:
 			start = clock();
-			image = zoom(image, windowHeight, windowWidth, zoomfactor);
+			image = zoom(image, windowWidth, windowHeight, zoomfactor);
 			end = clock();
 			printf("zoom: Time taken: SIMD-Version: %8.8f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
 			break;
 		case 1:
 			start = clock();
-			image = zoomSISD(image, windowHeight, windowWidth, zoomfactor);
+			image = zoomSISD(image, windowWidth, windowHeight, zoomfactor);
 			end = clock();
 			printf("zoom: Time taken: SISD-Version: %8.8f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
 			break;
 		case 2:
 			start = clock();
-			image = zoomC(image, windowHeight, windowWidth, zoomfactor);
+			image = zoomC(image, windowWidth, windowHeight, zoomfactor);
 			end = clock();
 			printf("zoom: Time taken: C-Version: %8.8f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
 			break;
