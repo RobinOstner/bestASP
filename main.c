@@ -161,12 +161,13 @@ static unsigned char* windowC(unsigned char* image_data, int xPos, int yPos, int
 	}
 
 	int windowIndex, imageIndex;
+	int windowPos = (xPos + yPos * originalWidth)
 	for (int x = 0; x < width; x++) {
 		for (int y = 0; y < height; y++) {
 			// Index within new picture (cutout)
 			windowIndex = (x + y*width) * 3;
 			// Index within old picture
-			imageIndex = ((xPos + yPos * originalWidth) + (x + y * originalWidth)) * 3;
+			imageIndex = (windowPos + (x + y * originalWidth)) * 3;
 			
 			// Write 3 bytes. One per color channel
 			window[windowIndex] = image[imageIndex];
@@ -280,9 +281,9 @@ int main(int argc, char** argv)
 		}
 		else if(0 == strcmp(argv[i], "-debug")){
 			// Default to ALL if no parameter is following
-			if(++i >= argc){DEBUG = ALL;}
-			
-			if(0 == strcmp(argv[i], "read")){
+			if(++i >= argc){
+				DEBUG = ALL;
+			}else if(0 == strcmp(argv[i], "read")){
 				DEBUG = READ;
 			}else if(0 == strcmp(argv[i], "write")){
 				DEBUG = WRITE;
