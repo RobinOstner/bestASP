@@ -32,29 +32,20 @@ window:
 	
 	;# last pointer of new array
 	add r11, r11, r10
-
+	
+	mov r12, #3
+	
 	;# LoopY
-	mov r8, #0
+	mov r1, r10
+	mov r2, r0
+	mul r4, r5, r12 ;# multiply width by #3 into r4 (Don't need height anymore
 	schleifeY:
 		
 		;# LoopX
 		mov r9, #0
+		add r0, r0, r4
+		mov r2, r0
 		schleifeX:
-
-			;# Calculate Index 
-
-			;# (loopX + originalWidth * loopY) * 3
-			mul r2, r8, r5
-			add r2, r2, r9
-			mov r12, #3
-			mul r2, r2, r12
-			add r2, r2, r0		;# pointer to source pixel
-
-			;# index new image
-			mul r1, r8, r3
-			add r1, r1, r9
-			mul r1, r1, r12	;# die #3 von vorhin
-			add r1, r1, r10	;# pointer to target pixel
 			
 			add r1, r1, #24
 			cmp r1, r11
@@ -63,12 +54,11 @@ window:
 			
 			SIMD:
 			;# Copy colors
-			vld3.8 {d8, d9, d10}, [r2]
-			vst3.8 {d8, d9, d10}, [r1]
+			vld3.8 {d8, d9, d10}, [r2]!
+			vst3.8 {d8, d9, d10}, [r1]!
 			b continue
 			
 			SISD:
-			SISD_INNER:
 			;# TODO find new register instead of r5
 				ldrb r6, [r2], #1
 				strb r6, [r1], #1
@@ -80,7 +70,7 @@ window:
 				strb r6, [r1], #1
 				
 				cmp r1, r11
-				blt SISD_INNER
+				blt SISD
 			b continue
 
 			continue:
@@ -91,8 +81,7 @@ window:
 			blt schleifeX
 
 		;# loopY
-		add r8, r8, #1
-		cmp r8, r4
+		cmp r1, r11
 		blt schleifeY
 
 	mov r0, r10 ;# return
