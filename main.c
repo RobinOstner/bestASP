@@ -115,6 +115,10 @@ static int readBmp(char *filename)
 	width = * (int*) &header[18];
 	height = * (int*) &header[22];
 
+	if(DEBUG == ALL || DEBUG == READ){
+		printf("Input image dimensions: %d : %d\n", width, height);
+	}
+	
 	int padding = 0;
 
 	// Calculate padding
@@ -399,6 +403,8 @@ int main(int argc, char** argv)
 	// WINDOW
 	// Switch to mode defined by input parameter
 	// Capture time taken by execution of function and print.
+	if(DEBUG == ALL || DEBUG == WINDOW)
+		printf("Calling window with following parameters:\nOffset: %d : %d\nDimensions: %d : %d\nogWidth: %d\n", xOffset, yOffset, windowWidth, windowHeight, width);
 	switch(mode){
 		case 0:
 			start = clock();

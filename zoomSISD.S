@@ -11,8 +11,8 @@ zoomSISD:
 
 	;# Change Position of Input data
 	mov r4, r3
-	mov r3, r1
-	;# Swapped width height for testing
+	mov r3, r2
+	mov r2, r1
 
 	;# Malloc for new Image
 	
@@ -32,58 +32,40 @@ zoomSISD:
 	
 	mov r0, r10		;# undo zwischenspeichern
 
-
-	mov r5, #0		;# Loop Counter X
-	pixelLoopX:
-
-		mov r6, #0		;# Loop Counter Y
-		pixelLoopY:
+	mul r11, r2, r3
+	mov r12, #3
+	mul r11, r11, r12	;# Size of old pic in bytes
+	add r11, r11, r0	;# to pointer
+	
+	mov r12, #3
+	mul r7, r4, r12
+	mul r12, r7, r2
+	sub r5, r4, #1
+	mul r12, r12, r5
+	
+	mov r6, r1
+	mov r5, r0			;# Loop Counter
+	mov r8, #0
+	loop:
+	
+		ldrb r9, [r5]
+		strb r9, [r6]
 		
-			;# Calc 1: pixelX*zoomFactor
-			mul r7, r5, r4
-
-			;# Calc 2: pixelY*zoomFactor*zoomFactor*windowWidth
-			mul r8, r6, r4
-			mul r8, r8, r4
-			mul r8, r8, r2
-
-			;# Add Up and Mul by 3 to get Pixel Coordinate: 
-			;# (pixelX*zoomFactor + pixelY*zoomFactor*zoomFactor*windowWidth) * 3
-			add r7, r7, r8
-			mov r8, #3
-			mul r7, r7, r8		;# r7 is now the PixelIndex of the new Image
-			
-
-			;# Calc3: (pixelX + pixelY*windowWidth) * 3
-			mul r8, r6, r2
-			add r8, r8, r5
-			mov r9, #3
-			mul r8, r8, r9		;# r8 is now the Index of the pixel on the old Image
-
-
-			;# Load & Store Colors
-			ldrb r9, [r0, r8]
-			strb r9, [r1, r7]
-
-			add r8, r8, #1
-			add r7, r7, #1
-			ldrb r9, [r0, r8]
-			strb r9, [r1, r7]
-			
-			add r8, r8, #1
-			add r7, r7, #1
-			ldrb r9, [r0, r8]
-			strb r9, [r1, r7]
-			
-			;# pixelLoopY
-			add r6, r6, #1
-			cmp r6, r3
-			blt pixelLoopY
-
-		;# pixelLoopX
-		add r5, r5, #1
-		cmp r5, r2
-		blt pixelLoopX
+		ldrb r9, [r5, #1]
+		strb r9, [r6, #1]
+		
+		ldrb r9, [r5, #2]
+		strb r9, [r6, #2]
+		
+		;# loop
+		add r5, r5, #3
+		add r6, r6, r7
+		add r8, r8, #1
+		cmp r8, r2
+		addge r6, r6, r12
+		movge r8, #0
+		cmp r5, r11
+		blt loop
 
 	
 	;# FILL 
@@ -98,11 +80,11 @@ zoomSISD:
 		
 			;# parentX coord
 			add r12, r5, #1
-			sdiv r7, r12, r4
+			udiv r7, r12, r4
 			mul r7, r7, r4
 			;# parentY coord
 			add r12, r6, #1
-			sdiv r8, r12, r4
+			udiv r8, r12, r4
 			mul r8, r8, r4
 			
 			;# check out of bounds

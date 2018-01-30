@@ -11,7 +11,8 @@ zoom:
 
 	;# Change Position of Input data
 	mov r4, r3
-	mov r3, r1
+	mov r3, r2
+	mov r2, r1
 
 	;# Malloc for new Image
 	mov r10, r0		;# r0 in r10 zwischenspeichern
@@ -64,128 +65,110 @@ zoom:
 		movge r8, #0
 		cmp r5, r11
 		blt loop
-
-	startFill:
 		
 	;# FILL 
-	mul r2, r2, r4	;# Scale width with scale-factor
-	mul r3, r3, r4	;# Scale height with scale-factor
+	mul r2, r2, r4		;# Scale width with scale-factor
+	mul r3, r3, r4		;# Scale height with scale-factor
 	
-	mov r6, #0		;# Loop Counter Y
+	;# set constants for NEON
+	vdup.32 q3, r4		;# q3 = zoomFactor
+	vdup.32 q8, r2		;# q4 = width
+	vdup.32 q9, r3		;# q5 = height
+	mov r12, #3	
+	vdup.32 q10, r12 	;# q10 = 3
+	
+	mov r6, #0			;# Loop Counter Y
 	fillLoopY:
 
 		mov r5, #0		;# Loop Counter  X
 		fillLoopX:
 
-			add r5, r5, #4
-			cmp r5, r2
-			sub r5, r5, #4
-			bge SISD_FILL
-
-		fill:
+			;# Fill q1 with (fillLoopX+1)/zoomFactor
+			;# Also fill q6 with fillLoop
+			;# Part 1
+			vmov.u32 s24, r5
+			
+			add r5, r5, #1
+			udiv r12, r5, r4
+			vmov.u32 s4, r12
+			
+			;# Part 2
+			vmov.u32 s25, r5
+			
+			add r5, r5, #1
+			udiv r12, r5, r4
+			vmov.u32 s5, r12
+			
+			;# Part 3
+			vmov.u32 s26, r5
+			
+			add r5, r5, #1
+			udiv r12, r5, r4
+			vmov.u32 s6, r12
+			
+			;# Part 4
+			vmov.u32 s27, r5
+			
+			add r5, r5, #1
+			udiv r12, r5, r4
+			vmov.u32 s7, r12
+			
+			vmul.u32 q1, q1, q3			;# q1 *= zoomFactor
+			
+			
+			vdup.32 q7, r6				;# q7 = fillLoopY
+			
+			add r12, r6, #1
+			udiv r12, r12, r4
+			mul r12, r12, r4			;# calc before dup, to save calculation time (minimal)
+			vdup.32 q2, r12				;# q2 = ((fillLoopY+1)/zoomFactor)*zoomFactor
+			
+			
+			;# check out of bounds (le, because eq will be handled seperately)
+			vcle.u32 q13, q6, q8
+			
+			
+			;# Edge handling
+			;# X
+			vceq.u32 q14, q1, q8
+			vand q14, q14, q3		;# zoomFactor, where necessary
+			vsub.u32 q1, q1, q14
+			
+			;# Y
+			vceq.u32 q14, q2, q9
+			vand q14, q14, q3		;# zoomFactor, where necessary
+			vsub.u32 q2, q2, q14
+			
+			
+			;# currentIndex
+			vmul.u32 q5, q7, q8
+			vadd.u32 q5, q5, q6
+			vmul.u32 q5, q5, q10
+			vand q5, q5, q13		;# set to 0 if out of bounds
+			
+			;# parentIndex
+			vmul.u32 q4, q2, q8
+			vadd.u32 q4, q4, q1
+			vmul.u32 q4, q4, q10
+			vand q4, q4, q13		;# set to 0 if out of bounds
 		
-			;# Move X Coordinate to Q1 (fillLoopX)
-			vmov s4, r5
-			add r5, r5, #1
-			sdiv r12, r5, r4
-			vmov s16, r12
-			vmov s5, r5
-			add r5, r5, #1
-			sdiv r12, r5, r4
-			vmov s17, r12
-			vmov s6, r5
-			add r5, r5, #1
-			sdiv r12, r5, r4
-			vmov s18, r12
-			vmov s7, r5
-			add r5, r5, #1
-			sdiv r12, r5, r4
-			vmov s19, r12
-			sub r5, r5, #4
-
-			;# Move Y Coordinate to Q2 (fillLoopY)
-			vdup.32 q2, r6
-			add r6, r6, #1
-			sdiv r12, r6, r4
-			mul r12, r12, r4
-			vdup.32 q5, r12				;# (Y-Coord+1/Zoom)*Zoom
-			sub r6, r6, #1
-
-			vdup.32 q3, r4				;# ZoomFactor
-			vmul.u32 q4, q4, q3			;# (X-Coord+1/Zoom)*Zoom
-			;#vmul.u32 q5,q5, q4
-			
-;#			add r12, r5, #1
-;#			sdiv r7, r12, r4
-;#			mul r7, r7, r4
-;#			;# parentY coord
-;#			add r12, r6, #1
-;#			sdiv r8, r12, r4
-;#			mul r8, r8, r4
-
-			;# Check Out Of Bounds
-			Compare:
-			vdup.32 q6, r2
-			vceq.u32 q7, q4, q6		;# Fills q7 with 0 or 1
-			vand q6, q3, q7
-			vsub.u32 q4, q4, q6
-
-			vdup.32 q6, r3
-			vceq.u32 q7, q5, q6		;# Fills q7 with 0 or 1
-			vand q6, q3, q7
-			vsub.u32 q5, q5, q6
-			
-;#			;# check out of bounds
-;#			cmp r7, r2
-;#			subeq r7, r7, r4
-;#			cmp r8, r3
-;#			subeq r8, r8, r4
-
-
-			;# Map Pixel Onto Array
-			mul r9, r6, r2			;# Y-Coord*Width
-			vdup.32 q6, r9
-			vadd.u32 q6, q6, q1		;# (Y-Coord*Width) + X-Coord
-			mov r12, #3
-			vdup.32 q7, r12
-			vmul.u32 q6, q6, q7		;# ((Y-Coord*Width) + X-Coord)*3
-
-;#			;# map pixel onto array
-;#			mul r9, r6, r2
-;#			add r9, r9, r5
-;#			mov r12, #3
-;#			mul r9, r9, r12
-
-
-			;# Map Parent Onto Array
-			vdup.32 q8, r2
-			vmul.u32 q5, q5, q8
-			vadd.u32 q5, q5, q4
-			vmul.u32 q5, q5, q7		;# ((Y-Map*Width)+XMap)*3
-
-;#			;# map parent onto array
-;#			mul r8, r8, r2
-;#			add r8, r8, r7
-;#			mul r8, r8, r12
-
 		
 			mov r12, #0 ;# loop counter 
        
-			vmov.u32 r7, d12[0]		;# load index in new Image
-			vmov.u32 r8, d10[0]		;# load index in old Image
+			vmov.u32 r8, s16		;# load index in old Image
+			vmov.u32 r7, s20		;# load index in new Image
 			
 			SISD_LS:  ;# Load and Store Colors 
-			         
-				ldrb r9, [r1, r8] 
-				strb r9, [r1, r7] 
-				add r8, r8, #1 
-				add r7, r7, #1 
-				ldrb r9, [r1, r8] 
-				strb r9, [r1, r7] 
-				add r8, r8, #1 
-				add r7, r7, #1 
-				ldrb r9, [r1, r8] 
-				strb r9, [r1, r7] 
+				;# to pointer
+			    add r8, r8, r1
+			    add r7, r7, r1
+				
+				ldrb r9, [r8] 
+				strb r9, [r7] 
+				ldrb r9, [r8, #1] 
+				strb r9, [r7, #1]
+				ldrb r9, [r8, #2] 
+				strb r9, [r7, #2] 
          
 				;# loop 4 times 
 				add r12,  r12, #1 
@@ -195,66 +178,24 @@ zoom:
 				bge load3 
          
 				load1: 
-					vmov.u32 r7, d12[1] 
-					vmov.u32 r8, d10[1] 
+					vmov.u32 r8, s17 
+					vmov.u32 r7, s21
 					b SISD_LS      ;# jump without condition, because eq & lt 2 ist <4 
 				load2: 
-					vmov.u32 r7, d13[0] 
-					vmov.u32 r8, d11[0] 
+					vmov.u32 r8, s18 
+					vmov.u32 r7, s22
 					b SISD_LS      ;# jump without condition, because eq & lt 2 ist <4 
 				load3: 
 					cmp r12, #4 
-					bge exitLoop 
-					vmov.u32 r7, d13[1] 
-					vmov.u32 r8, d11[1] 
+					bge exitSISD_LS 
+					vmov.u32 r8, s19
+					vmov.u32 r7, s23
 					b SISD_LS 
-
-			SISD_FILL:
-			
-			add r12, r5, #1
-			sdiv r7, r12, r4
-			mul r7, r7, r4
-			;# parentY coord
-			add r12, r6, #1
-			sdiv r8, r12, r4
-			mul r8, r8, r4
-				
-			;# check out of bounds
-			cmp r7, r2
-			subeq r7, r7, r4
-			cmp r8, r3
-			subeq r8, r8, r4
-
-			;# map pixel onto array
-			mul r9, r6, r2
-			add r9, r9, r5
-			mov r12, #3
-			mul r9, r9, r12
-
-			;# map parent onto array
-			mul r8, r8, r2
-			add r8, r8, r7
-			mul r8, r8, r12
-
-			ldrb r12, [r1, r8] 
-			strb r12, [r1, r9] 
-			add r8, r8, #1 
-			add r9, r9, #1 
-			ldrb r12, [r1, r8] 
-			strb r12, [r1, r9] 
-			add r8, r8, #1 
-			add r9, r9, #1 
-			ldrb r12, [r1, r8] 
-			strb r12, [r1, r9] 
-
-			add r5, r5, #1
-			cmp r5, r2
-			blt fillLoopX
-
-			exitLoop:
+					
+			exitSISD_LS:
 			
 			;# pixelLoopX
-			add r5, r5, #4
+			;# r5 is already incremented
 			cmp r5, r2
 			blt fillLoopX
 
@@ -263,12 +204,8 @@ zoom:
 		cmp r6, r3
 		blt fillLoopY
 	
-	endFill:
-		mov r0, r1
+	mov r0, r1
 
-		;# Stack wiederherstellen
-		POP {r4-r11, lr}
-		BX lr
-
-	jump:
-		b endFill
+	;# Stack wiederherstellen
+	POP {r4-r11, lr}
+	BX lr
