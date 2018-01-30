@@ -2,15 +2,15 @@
 .extern malloc
 
 .code 32
-
+ 
 window:
 
 	;# Sichern der benoetigten Register
 	PUSH {r4-r11, lr}
 
 	;# Laden der restlichen beiden Uebergabewerte vom Stack
-	ldr r4, [sp, #32]
-	ldr r5, [sp, #36]
+	ldr r4, [sp, #36]
+	ldr r5, [sp, #40]
 	
 	mul r12, r5, r2	;# ogWidth * yPos
 	add r12, r12, r1	;# (ogWidth * yPos) + xPos
