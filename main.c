@@ -161,7 +161,7 @@ static unsigned char* windowC(unsigned char* image_data, int xPos, int yPos, int
 	}
 
 	int windowIndex, imageIndex;
-	int windowPos = (xPos + yPos * originalWidth)
+	int windowPos = (xPos + yPos * originalWidth);
 	for (int x = 0; x < width; x++) {
 		for (int y = 0; y < height; y++) {
 			// Index within new picture (cutout)

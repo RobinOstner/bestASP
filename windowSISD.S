@@ -1,119 +1,73 @@
 .global windowSISD
+.extern malloc
 
 .code 32
-
+ 
 windowSISD:
 
 	;# Sichern der benoetigten Register
-	PUSH {r4-r10, lr}
+	PUSH {r4-r11, lr}
 
 	;# Laden der restlichen beiden Uebergabewerte vom Stack
-	ldr r4, [sp, #32]
-	ldr r5, [sp, #36]
+	ldr r4, [sp, #36]
+	ldr r5, [sp, #40]
 	
-	;# Copy to s Registers
-	vmov s0, r1  ;# xPosition
-	vmov s1, r2  ;# yPosition
-	vmov s2, r3 ;# Width S
-	mov r6, r3  ;# Width
-	vmov s3, r4 ;# Height S
-	mov r7, r4  ;# Height
-	vmov s4, r5  ;# Original Width
+	mul r12, r5, r2	;# ogWidth * yPos
+	add r12, r12, r1	;# (ogWidth * yPos) + xPos
+	mov r11, #3			;# r11 not yet in use
+	mul r12, r12, r11	;# ((ogWidth * yPos) + xPos) * 3
+	add r0, r0, r12	;# we now no longer need xPos, yPos -> more registers
+	
+	;# Malloc for new Image
+	push {r0-r3}
+	
+	;# Groesse: width * height * 3 (bytes)
+	mul r0, r3, r4
+	mul r0, r0, r11	;# 3 von vorhin
+	mov r11, r0			;# save size in r11
+		
+	bl malloc
+	mov r10, r0		;# move new pointer to r10
+	pop {r0-r3}
+	
+	;# last pointer of new array
+	add r11, r11, r10
 
-	;# Convert To Float
-	vcvt.f32.u32 s0, s0
-	vcvt.f32.u32 s1, s1
-	vcvt.f32.u32 s2, s2
-	vcvt.f32.u32 s3, s3
-	vcvt.f32.u32 s4, s4
-
-	;# Free Space Index
-	mov r1, #0
-
-
-	;# LoopX
-	mov r8, #0
-
-schleifeX:
+	mov r12, #3
 	
 	;# LoopY
-	mov r9, #0
-
+	mov r1, r10
+	mov r2, r0
+	mul r4, r5, r12 ;# multiply width by #3 into r4 (Don't need height anymore
 	schleifeY:
-
-		;# Calculate Index 
-
-		;# yPos*originalWidth + xPos
-		vmul.f32 s7, s1, s4
-		vadd.f32 s7, s7, s0
-
 		
-		;# (ypos*originalWidth + xPos)*3
-		mov r5, #3
-		vmov s9, r5
-		vcvt.f32.u32 s9, s9
-		vmul.f32 s7, s7, s9
+		;# LoopX
+		mov r9, #0
+		add r0, r0, r4
+		mov r2, r0
+		schleifeX:
+			
+			;# TODO find new register instead of r5
+			ldrb r6, [r2], #1
+			strb r6, [r1], #1
+			
+			ldrb r6, [r2], #1
+			strb r6, [r1], #1
+			
+			ldrb r6, [r2], #1
+			strb r6, [r1], #1
 
-		;# loopX + originalWidth*loopY
-		vmov s6, r8
-		vcvt.f32.u32 s6, s6
-		vmul.f32 s8, s6, s4
+			;# loopX
+			add r9, r9, #1
+			cmp r9, r3
+			blt schleifeX
 
-		;# (loopX + originalWidth*loopY)*3
-		vmov s5, r9
-		vcvt.f32.u32 s5, s5
-		vadd.f32 s8, s8, s5
-		vmul.f32 s8, s8, s9
-
-		;# (ypos*originalWidth + xPos)*3 + (loopX + originalWidth*loopY)*3
-		vadd.f32 s7, s7, s8
-
-		;# Index
-		vcvt.u32.f32 s7, s7
-		vmov r2, s7
-
-		;# r2 is the index of the current Pixel
-
-		;# Copy Blue Value
-		ldr r3, [r0, r2]
-
-		add r2, r2, #1		;# r2 is next Color Value of current Pixel
-
-		;# Copy Green Value
-		ldr r4, [r0, r2]
-
-		add r2, r2, #1		;# r2 is next Color Value of current Pixel
-
-		;# Copy Red Value
-		ldr r5, [r0, r2]
-
-		;# Store Blue Value
-		str r3, [r0, r1]
-
-		add r1, r1, #1		;# r1 is next free space
-
-		;# Store Green Value
-		str r4, [r0, r1]
-
-		add r1, r1, #1		;# r1 is next free space
-
-		;# Store Red Value
-		str r5, [r0, r1]
-		
-		add r1, r1, #1		;# r1 is next free space
-		
 		;# loopY
-		add r9, r9, #1
-		cmp r9, r7
+		cmp r1, r11
 		blt schleifeY
 
-	;# loopX
-	add r8, r8, #1
-	cmp r8, r6
-	blt schleifeX
-
-
+	mov r0, r10 ;# return
 
 	;# Stack wiederherstellen
-	POP {r4-r10, lr}
+	POP {r4-r11, lr}
 	BX lr
