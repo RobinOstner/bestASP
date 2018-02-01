@@ -72,8 +72,8 @@ zoom:
 	
 	;# set constants for NEON
 	vdup.32 q3, r4		;# q3 = zoomFactor
-	vdup.32 q8, r2		;# q4 = width
-	vdup.32 q9, r3		;# q5 = height
+	vdup.32 q8, r2		;# q8 = width
+	vdup.32 q9, r3		;# q9 = height
 	mov r12, #3	
 	vdup.32 q10, r12 	;# q10 = 3
 	

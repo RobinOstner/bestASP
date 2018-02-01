@@ -151,7 +151,8 @@ static int readBmp(char *filename)
 static unsigned char* windowC(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth) {
 
 	// Allocate memory to store image data (non-padded)
-	unsigned char* window = (unsigned char *) malloc(width * height * 3 * sizeof(unsigned char));
+	int size = width * height * 3;
+	unsigned char* window = (unsigned char *) malloc(size * sizeof(unsigned char));
 	
 	// Stop if malloc failed
 	if (window == NULL)
@@ -159,21 +160,18 @@ static unsigned char* windowC(unsigned char* image_data, int xPos, int yPos, int
 		printf("Error: Malloc failed\n");
 		return image_data;
 	}
-
-	int windowIndex, imageIndex;
-	int windowPos = (xPos + yPos * originalWidth);
-	for (int x = 0; x < width; x++) {
-		for (int y = 0; y < height; y++) {
-			// Index within new picture (cutout)
-			windowIndex = (x + y*width) * 3;
-			// Index within old picture
-			imageIndex = (windowPos + (x + y * originalWidth)) * 3;
-			
-			// Write 3 bytes. One per color channel
-			window[windowIndex] = image[imageIndex];
-			window[windowIndex + 1] = image[imageIndex + 1];
-			window[windowIndex + 2] = image[imageIndex + 2];
+	
+	image_data += ((xPos + originalWidth * yPos) * 3);
+	unsigned char* currentLine = image_data;
+	unsigned char* currentWindowPointer = window;
+	for(unsigned char* end = window + size; currentWindowPointer < end;){
+		for (int loopX = 0; loopX < width; ++loopX){
+			*(currentWindowPointer++) = *(currentLine++);
+			*(currentWindowPointer++) = *(currentLine++);
+			*(currentWindowPointer++) = *(currentLine++);
 		}
+		image_data += originalWidth * 3;
+		currentLine = image_data;
 	}
 
 	return window;
@@ -429,6 +427,13 @@ int main(int argc, char** argv)
 	
 	if(DEBUG == ALL || DEBUG == STEPS) printf("Window finished\n");
 
+	
+	if(DEBUG == ALL || DEBUG == WINDOW){
+		// Write output image to disc
+		writeBMP(image, windowWidth, windowHeight);
+		return 0;
+	}
+	
 	// ZOOM
 	// Switch to mode defined by input parameter
 	// Capture time taken by execution of function and print.
