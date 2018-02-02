@@ -6,9 +6,9 @@
 
 // Define external functions and their arguments
 extern unsigned char* window(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
-extern unsigned char* zoom(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
+extern unsigned char* zoom(unsigned char* image_data, int ogWidth, int ogHeight, int factor);
 extern unsigned char* windowSISD(unsigned char* image_data, int xPos, int yPos, int width, int height, int originalWidth);
-extern unsigned char* zoomSISD(unsigned char* image_data, int ogWidth, int ogHeight, int zoomFactor);
+extern unsigned char* zoomSISD(unsigned char* image_data, int ogWidth, int ogHeight, int factor);
 
 #define INPUT_ERROR printf("Incorrect input.\n"); return -1;
 
@@ -161,15 +161,25 @@ static unsigned char* windowC(unsigned char* image_data, int xPos, int yPos, int
 		return image_data;
 	}
 	
+	// Add the offset to the pointer right away
 	image_data += ((xPos + originalWidth * yPos) * 3);
+	// Line to read from
 	unsigned char* currentLine = image_data;
+	// Pointer to write to
 	unsigned char* currentWindowPointer = window;
-	for(unsigned char* end = window + size; currentWindowPointer < end;){
+	// Last pixel of the new image
+	unsigned char* end = window + size;
+	
+	// Loop over all pixels of new image
+	for(; currentWindowPointer < end;){
+		
+		// Loop over the current line and copy all bytes to new image
 		for (int loopX = 0; loopX < width; ++loopX){
 			*(currentWindowPointer++) = *(currentLine++);
 			*(currentWindowPointer++) = *(currentLine++);
 			*(currentWindowPointer++) = *(currentLine++);
 		}
+		// set currentLine to the next line
 		image_data += originalWidth * 3;
 		currentLine = image_data;
 	}
@@ -178,9 +188,9 @@ static unsigned char* windowC(unsigned char* image_data, int xPos, int yPos, int
 }
 
 
-static unsigned char* zoomC(unsigned char* image_data, int windowWidth, int windowHeight, int zoomFactor) {
+static unsigned char* zoomC(unsigned char* image_data, int windowWidth, int windowHeight, int factor) {
 	// Allocate memory to store image data (non-padded)
-	unsigned char* zoom = (unsigned char *) malloc(windowHeight * windowWidth * zoomFactor * zoomFactor * 3 * sizeof(unsigned char));
+	unsigned char* zoom = (unsigned char *) malloc(windowHeight * windowWidth * factor * factor * 3 * sizeof(unsigned char));
 	
 	// Stop if malloc failed
 	if (zoom == NULL)
@@ -188,38 +198,52 @@ static unsigned char* zoomC(unsigned char* image_data, int windowWidth, int wind
 		printf("Error: Malloc failed\n");
 		return image_data;
 	}
-
-	// Loop over all original pixels
-	for(int pixelX = 0; pixelX < windowWidth; pixelX++){
-		for (int pixelY = 0; pixelY < windowHeight; pixelY++) {
-
-			// The index in the array for the current pixel
-			// Index within new picture (zoom)
-			int zoomIndex = (pixelX + pixelY * zoomFactor * windowWidth) * zoomFactor * 3;
-			// Index within old picture
-			int imageIndex = (pixelX + pixelY * windowWidth) * 3;
-			
-			// Write 3 bytes. One per color channel
-			zoom[zoomIndex] = image_data[imageIndex];
-			zoom[zoomIndex + 1] = image_data[imageIndex + 1];
-			zoom[zoomIndex + 2] = image_data[imageIndex + 2];
+	
+	// Last pointer of old image
+	unsigned char* end = image_data + windowWidth * windowHeight * 3;
+	// Increment between pixels in new image
+	unsigned int increment = factor * 3;
+	// Increment between lines in new image
+	unsigned int lineIncrement = increment * windowWidth * (factor - 1);
+	
+	unsigned char* pointerOld = image_data;
+	unsigned char* pointerNew = zoom;
+	
+	for(int counter = 0; pointerOld < end;){
+		if(DEBUG == ALL || DEBUG == ZOOM)
+			printf("Zoom copy loop: \tCounter: %d, \twindowWidth: %d, \tindex old: %d, \tindex new: %d\n",
+				counter, windowWidth, pointerOld - image_data, pointerNew - zoom);
+				
+		// Write pixel and increment pointerOld
+		*(pointerNew) = *(pointerOld++);
+		*(pointerNew+1) = *(pointerOld++);
+		*(pointerNew+2) = *(pointerOld++);
+		
+		// increment pointerNew
+		pointerNew += increment;
+		++counter;
+		
+		// if counter exceeds windowWidth, jump to next line
+		if(counter >= windowWidth){
+			pointerNew += lineIncrement;
+			counter = 0;
 		}
 	}
 
 	// Fill loop
-	windowWidth *= zoomFactor;
-	windowHeight *= zoomFactor;
+	windowWidth *= factor;
+	windowHeight *= factor;
 	for(int pixelX = 0; pixelX < windowWidth; pixelX++){
 		for (int pixelY = 0; pixelY < windowHeight; pixelY++) {
 		
 			// Calculate coordinates of pixel to take color from
 			// Coordinates used are offset by +1 / +1, in order to calculate according to Nearest Neighbor algorithm described in the assignment.
-			int parentX = pixelX + 1 - ((pixelX + 1) % zoomFactor);
-			int parentY = pixelY + 1 - ((pixelY + 1) % zoomFactor);
+			int parentX = pixelX + 1 - ((pixelX + 1) % factor);
+			int parentY = pixelY + 1 - ((pixelY + 1) % factor);
 			
 			// Edge handling
-			if(parentX == windowWidth) parentX -= zoomFactor;
-			if(parentY == windowHeight) parentY -= zoomFactor;
+			if(parentX == windowWidth) parentX -= factor;
+			if(parentY == windowHeight) parentY -= factor;
 
 			// The index in the array for the current pixel
 			// Index of current pixel
@@ -245,7 +269,7 @@ int main(int argc, char** argv)
 	int windowHeight = -1;
 	int xOffset = 0;
 	int yOffset = 0;
-	int zoomfactor = 3;
+	int factor = 3;
 	int mode = 0;	// 0 == SIMD, 1 == SISD, 2 == C
 	
 	// get command line arguments
@@ -275,7 +299,7 @@ int main(int argc, char** argv)
 			// Check if there is a parameter following
 			if(i+1 >= argc){INPUT_ERROR}
 			
-			zoomfactor = atoi(argv[++i]);
+			factor = atoi(argv[++i]);
 		}
 		else if(0 == strcmp(argv[i], "-debug")){
 			// Default to ALL if no parameter is following
@@ -375,14 +399,14 @@ int main(int argc, char** argv)
 		windowWidth < 0 ||
 		xOffset < 0 ||
 		yOffset < 0 ||
-		zoomfactor < 0){
+		factor < 0){
 			
 		printf("Invalid input: Negative input!\n");
 		return -1;
 		
 	}else if(windowHeight == 0 ||
 		windowWidth == 0 ||
-		zoomfactor == 0){
+		factor == 0){
 			
 		printf("Invalid input: 0 is not valid!\n");
 		return -1;
@@ -440,19 +464,19 @@ int main(int argc, char** argv)
 	switch(mode){
 		case 0:
 			start = clock();
-			image = zoom(image, windowWidth, windowHeight, zoomfactor);
+			image = zoom(image, windowWidth, windowHeight, factor);
 			end = clock();
 			printf("Zoom: Time taken: SIMD-Version: %6.6f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
 			break;
 		case 1:
 			start = clock();
-			image = zoomSISD(image, windowWidth, windowHeight, zoomfactor);
+			image = zoomSISD(image, windowWidth, windowHeight, factor);
 			end = clock();
 			printf("Zoom: Time taken: SISD-Version: %6.6f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
 			break;
 		case 2:
 			start = clock();
-			image = zoomC(image, windowWidth, windowHeight, zoomfactor);
+			image = zoomC(image, windowWidth, windowHeight, factor);
 			end = clock();
 			printf("Zoom: Time taken: C-Version: %6.6f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
 			break;
@@ -461,7 +485,7 @@ int main(int argc, char** argv)
 	if(DEBUG == ALL || DEBUG == STEPS) printf("Zoom finished\n");
 	
 	// Write output image to disc
-	writeBMP(image, windowWidth * zoomfactor, windowHeight * zoomfactor);
+	writeBMP(image, windowWidth * factor, windowHeight * factor);
 
 	if(DEBUG == ALL || DEBUG == STEPS) printf("Write finished\n");
     return 0;

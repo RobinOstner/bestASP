@@ -7,7 +7,7 @@
 zoomSISD:
 
 	;# Sichern der benoetigten Register
-	PUSH {r4-r10, lr}
+	PUSH {r4-r11, lr}
 
 	;# Change Position of Input data
 	mov r4, r3
@@ -15,7 +15,6 @@ zoomSISD:
 	mov r2, r1
 
 	;# Malloc for new Image
-	
 	mov r10, r0		;# r0 in r10 zwischenspeichern
 	
 	;# Groesse: width * height * (scale*scale) * 3 (bytes)
@@ -66,7 +65,6 @@ zoomSISD:
 		movge r8, #0
 		cmp r5, r11
 		blt loop
-
 	
 	;# FILL 
 	mul r2, r2, r4	;# Scale width with scale-factor
@@ -79,16 +77,16 @@ zoomSISD:
 		fillLoopY:
 		
 			;# parentX coord
-			add r12, r5, #1
+			add r12, r5, r4, LSR #1
 			udiv r7, r12, r4
 			mul r7, r7, r4
 			;# parentY coord
-			add r12, r6, #1
+			add r12, r6, r4, LSR #1
 			udiv r8, r12, r4
 			mul r8, r8, r4
 			
 			;# check out of bounds
-			cmp r7, r2
+			cmp r7, r2 
 			subeq r7, r7, r4
 			cmp r8, r3
 			subeq r8, r8, r4
@@ -128,9 +126,8 @@ zoomSISD:
 		cmp r5, r2
 		blt fillLoopX
 	
-	end:
-		mov r0, r1
-
-		;# Stack wiederherstellen
-		POP {r4-r10, lr}
-		BX lr
+	mov r0, r1
+	
+	;# Stack wiederherstellen
+	POP {r4-r11, lr}
+	BX lr
