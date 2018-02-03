@@ -287,6 +287,4 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
-Copy\.bmp
-
-Copy2\.bmp
+.bmp
