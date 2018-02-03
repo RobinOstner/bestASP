@@ -5,10 +5,10 @@
  
 windowSISD:
 
-	;# Sichern der benoetigten Register
+	;# Push required registers
 	PUSH {r4-r11, lr}
 
-	;# Laden der restlichen beiden Uebergabewerte vom Stack
+	;# Read remaining parameters from stack
 	ldr r4, [sp, #36]
 	ldr r5, [sp, #40]
 	
@@ -21,9 +21,9 @@ windowSISD:
 	;# Malloc for new Image
 	push {r0-r3}
 	
-	;# Groesse: width * height * 3 (bytes)
+	;# Size: width * height * 3 (bytes)
 	mul r0, r3, r4
-	mul r0, r0, r11	;# 3 von vorhin
+	mul r0, r0, r11	;# 3 from before
 	mov r11, r0			;# save size in r11
 		
 	bl malloc
@@ -33,20 +33,20 @@ windowSISD:
 	;# last pointer of new array
 	add r11, r11, r10
 
-	mov r12, #3
-	
 	;# LoopY
-	mov r1, r10
-	mov r2, r0
-	mul r4, r5, r12 ;# multiply width by #3 into r4 (Don't need height anymore
-	schleifeY:
+	mov r1, r10			;# counter new image
+	mov r2, r0			;# counter old image
+	mov r12, #3
+	mul r4, r5, r12	;# multiply width by #3 into r4 (Don't need height anymore)
+	loopY:
 		
 		;# LoopX
-		mov r9, #0
+		mov r9, #0		;# reset counter
 		mov r2, r0
-		add r0, r0, r4
-		schleifeX:
+		add r0, r0, r4 ;# move to next line
+		loopX:
 			
+			;#Load colors per byte to new image 
 			ldrb r6, [r2], #1
 			strb r6, [r1], #1
 			
@@ -59,14 +59,14 @@ windowSISD:
 			;# loopX
 			add r9, r9, #1
 			cmp r9, r3
-			blt schleifeX
+			blt loopX
 
 		;# loopY
 		cmp r1, r11
-		blt schleifeY
+		blt loopY
 
-	mov r0, r10 ;# return
+	mov r0, r10 ;# return new image
 
-	;# Stack wiederherstellen
+	;# Restore stack
 	POP {r4-r11, lr}
 	BX lr
