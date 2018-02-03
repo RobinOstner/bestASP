@@ -1,10 +1,10 @@
-.global zoom
+.global zoomIS
 .extern malloc
 
 .code 32
 
 
-zoom:
+zoomIS:
 
 	;# Push required registers
 	PUSH {r4-r11, lr}
@@ -73,7 +73,7 @@ zoom:
 	mul r3, r3, r4		;# Scale height with scale-factor
 	
 	;# set constants for NEON
-	vdup.32 q3, r4		;# q3 = zoomFactor
+	vdup.32 q3, r4		;# q3 = factor
 	vdup.32 q8, r2		;# q8 = width
 	vdup.32 q9, r3		;# q9 = height
 	mov r12, #3	
@@ -88,67 +88,49 @@ zoom:
 			;# q1 will be the parent's x coord, q2 for y
 			;# q6 will be the current pixel's x coord, q7 for y
 		
-			;# Fill q1 with (fillLoopX + factor / 2) / factor
+			;# Fill q1 with fillLoopX / factor
 			;# Also fill q6 with fillLoopX
 			
 			;# Part 1
 			vmov.u32 s24, r5
 			
-			add r12, r5, r4, LSR #1
-			udiv r12, r12, r4
+			udiv r12, r5, r4
 			vmov.u32 s4, r12
 			add r5, r5, #1
 			
 			;# Part 2
 			vmov.u32 s25, r5
 			
-			add r12, r5, r4, LSR #1
-			udiv r12, r12, r4
+			udiv r12, r5, r4
 			vmov.u32 s5, r12
 			add r5, r5, #1
 			
 			;# Part 3
 			vmov.u32 s26, r5
 			
-			add r12, r5, r4, LSR #1
-			udiv r12, r12, r4
+			udiv r12, r5, r4
 			vmov.u32 s6, r12
 			add r5, r5, #1
 			
 			;# Part 4
 			vmov.u32 s27, r5
 			
-			add r12, r5, r4, LSR #1
-			udiv r12, r12, r4
+			udiv r12, r5, r4
 			vmov.u32 s7, r12
 			add r5, r5, #1
 			
-			vmul.u32 q1, q1, q3			;# q1 *= zoomFactor
+			vmul.u32 q1, q1, q3			;# q1 *= factor
 			;# q1 is now the parentX coord
 			
 			vdup.32 q7, r6				;# q7 = fillLoopY
 			
-			add r12, r6, r4, LSR #1
-			udiv r12, r12, r4
+			udiv r12, r6, r4
 			mul r12, r12, r4			;# calc before dup, to save calculation time (minimal)
-			vdup.32 q2, r12			;# q2 = ((fillLoopY + 1) / zoomFactor) * zoomFactor
+			vdup.32 q2, r12			;# q2 = ((fillLoopY + factor / 2) / factor) * factor
 			;# q2 is now the parentY coord
 			
 			;# check out of bounds (le, because eq will be handled seperately)
 			vcle.u32 q13, q6, q8
-			
-			
-			;# Edge handling
-			;# X
-			vceq.u32 q14, q1, q8
-			vand q14, q14, q3		;# factor, where necessary
-			vsub.u32 q1, q1, q14	;# subtract
-			
-			;# Y
-			vceq.u32 q14, q2, q9
-			vand q14, q14, q3		;# factor, where necessary
-			vsub.u32 q2, q2, q14	;# subtract
-			
 			
 			;# currentIndex (x + y * width) * 3
 			vmul.u32 q5, q7, q8
@@ -162,7 +144,6 @@ zoom:
 			vmul.u32 q4, q4, q10
 			vand q4, q4, q13		;# set to 0 if out of bounds
 		
-			
 			;# Write pixels to image using SISD
 			mov r12, #0 ;# loop counter 
        

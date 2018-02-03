@@ -39,7 +39,7 @@ window:
 	mov r12, #3
 	mul r3, r3, r12	;# multiply width by 3 (Is now per byte, not pixel)
 	mov r7, r10			;# r7 = new image pointer (Will be modified in the loop
-	mul r4, r5, r12 	;# multiply width by #3 into r4 (Don't need height anymore
+	mul r4, r5, r12 	;# multiply width by #3 into r4 (Don't need height anymore)
 	loopY:
 		
 		;# LoopX
@@ -53,7 +53,7 @@ window:
 			add r1, r1, #24
 			cmp r1, r11
 			sub r1, r1, #24
-			bge SISD			;# if image doesn't have at least 8 pixels left to be writtem,
+			bge SISD			;# if image doesn't have at least 8 pixels left to be written,
 								;# jump to SISD. Avoid Segmentation faults.
 			
 			SIMD:
@@ -83,12 +83,12 @@ window:
 			continue:
 
 			;# loopX
-			add r9, r9, #24
+			add r9, r9, #24		;# increment by 24, for 8 pixels + 3 bytes
 			cmp r9, r3
 			blt loopX
 
 		;# loopY
-		cmp r1, r11
+		cmp r1, r11			;# r1 has already been incremented
 		blt loopY
 
 	mov r0, r10 ;# return new image

@@ -9,6 +9,8 @@ extern char* window(char* data, int x, int y, int width, int height, int ogWidth
 extern char* zoom(char* data, int width, int height, int factor);
 extern char* windowSISD(char* data, int x, int y, int width, int height, int ogWidth);
 extern char* zoomSISD(char* data, int width, int height, int factor);
+// Improvement suggestion
+extern char* zoomIS(char* data, int width, int height, int factor);
 
 #define INPUT_ERROR(position) printf("Incorrect input. @%d\n", position); return -1;
 
@@ -16,14 +18,22 @@ extern char* zoomSISD(char* data, int width, int height, int factor);
 enum DEBUG_MODE {NONE=0, ALL, READ, WRITE, WINDOW, ZOOM, STEPS};
 static int DEBUG = NONE;
 
-static char* data;
-static int ogWidth, ogHeight;
+static int benchmark = 0;			// execute testAll function to benchmark all functions
+
+static char* data;					// image data
+static int ogWidth, ogHeight;		// original dimensions
+static char* filenameInput = "lena.bmp";
+static char* filenameOutput = "copy.bmp";
+static int width = -1, height = -1;	// new dimensions (before scaling)
+static int x = 0, y = 0;			// offsets for window cutout
+static int factor = 3;				// scale factor
+static int executionMode = 0;		// 0 == SIMD, 1 == SISD, 2 == C, 3 == Improvement suggestion (SIMD)
 
 
-static int readBMP(char* filename) {
+static int readBMP() {
 	// Open the filestream
 	FILE *file;
-	file = fopen(filename, "rb");
+	file = fopen(filenameInput, "rb");
 	// Stop if file couldn't be opened
 	if (file == NULL)
 	{
@@ -69,7 +79,7 @@ static int readBMP(char* filename) {
 	return 0;
 }
 
-static int writeBMP(char* filename, char* data, int width, int height) {
+static int writeBMP() {
 	// fileHeader and infoHeader according to Wikipedia
 	char fileHeader[14] = {'B','M', 0,0,0,0, 0,0,0,0, 54,0,0,0};
 	char infoHeader[40] = {40,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,24,0};
@@ -100,7 +110,7 @@ static int writeBMP(char* filename, char* data, int width, int height) {
 	infoHeader[28] = 32;
 
 	// Loading the actual file
-	FILE* file = fopen(filename, "wb");
+	FILE* file = fopen(filenameOutput, "wb");
 
 	// Write headers
 	fwrite(fileHeader, 1, 14, file);
@@ -260,18 +270,102 @@ static char* zoomC(char* data, int width, int height, int factor) {
 	return newData;
 }
 
+#define BENCHMARK_BEGINNING	time = 0.0; for(int r = 0; r < benchmark; ++r){ memcpy(copy, data, size); start = clock();
+#define BENCHMARK_END		end = clock(); time += (((double) (end - start)) / CLOCKS_PER_SEC); }
+
+// Benchmark all versions
+void testAll(){
+	// Declare variables for time measuring
+	clock_t start, end;
+	double time;
+	printf("Benchmarking all functions over %d runs\n", benchmark);
+	
+	size_t size = ogWidth * ogHeight * 3 * sizeof(char);
+	char* copy = (char*) malloc(size);
+
+	// Benchmark window functions
+
+	time = 0.0;
+	for(int r = 0; r < benchmark; ++r){
+		memcpy(copy, data, size);
+		start = clock();
+		windowC(copy, x, y, width, height, ogWidth);
+		end = clock();
+		time += (((double) (end - start)) / CLOCKS_PER_SEC);
+	}
+	printf("\twindow:\tC\t%8.8f s\n", time / benchmark);
+	
+	time = 0.0;
+	for(int r = 0; r < benchmark; ++r){
+		memcpy(copy, data, size);
+		start = clock();
+		windowSISD(copy, x, y, width, height, ogWidth);
+		end = clock();
+		time += (((double) (end - start)) / CLOCKS_PER_SEC);
+	}
+	printf("\twindow:\tSISD\t%8.8f s\n", time / benchmark);
+	
+	time = 0.0;
+	for(int r = 0; r < benchmark; ++r){
+		memcpy(copy, data, size);
+		start = clock();
+		window(copy, x, y, width, height, ogWidth);
+		end = clock();
+		time += (((double) (end - start)) / CLOCKS_PER_SEC);
+	}
+	printf("\twindow:\tSIMD\t%8.8f s\n", time / benchmark);
+	
+	// Execute once normally
+	
+	data = windowC(data, x, y, width, height, ogWidth);
+	size = width * height * 3 * sizeof(char);
+	copy = (char*) malloc(size);
+	
+	// Benchmark zoom functions
+	
+	time = 0.0; 
+	for(int r = 0; r < benchmark; ++r){ 
+		memcpy(copy, data, size); 
+		start = clock();
+		zoomC(copy, width, height, factor);
+		end = clock(); 
+		time += (((double) (end - start)) / CLOCKS_PER_SEC); 
+	}
+	printf("\tzoom:\tC\t%8.8f s\n", time / benchmark);
+	
+	time = 0.0; 
+	for(int r = 0; r < benchmark; ++r){ 
+		memcpy(copy, data, size); 
+		start = clock();
+		zoomSISD(copy, width, height, factor);
+		end = clock(); 
+		time += (((double) (end - start)) / CLOCKS_PER_SEC); 
+	}
+	printf("\tzoom:\tSISD\t%8.8f s\n", time / benchmark);
+	
+	time = 0.0; 
+	for(int r = 0; r < benchmark; ++r){ 
+		memcpy(copy, data, size); 
+		start = clock();
+		zoom(copy, width, height, factor);
+		end = clock(); 
+		time += (((double) (end - start)) / CLOCKS_PER_SEC); 
+	}
+	printf("\tzoom:\tSIMD\t%8.8f s\n", time / benchmark);
+	
+	time = 0.0; 
+	for(int r = 0; r < benchmark; ++r){ 
+		memcpy(copy, data, size); 
+		start = clock();
+		zoomIS(copy, width, height, factor);
+		end = clock(); 
+		time += (((double) (end - start)) / CLOCKS_PER_SEC); 
+	}
+	printf("\tzoom:\tIm.Su.\t%8.8f s\n", time / benchmark);
+}
+
 int main(int argc, char** argv)
 {
-	// initial values
-	char* filenameInput = "lena.bmp";
-	char* filenameOutput = "copy.bmp";
-	int width = -1;
-	int height = -1;
-	int x = 0;
-	int y = 0;
-	int factor = 3;
-	int executionMode = 0;	// 0 == SIMD, 1 == SISD, 2 == C
-	
 	// get command line arguments
 	// use -help in commandline to get a description of every command
 	for(int i = 1; i < argc; ++i){
@@ -306,6 +400,12 @@ int main(int argc, char** argv)
 			if(i+1 >= argc){INPUT_ERROR(4);}
 			
 			factor = atoi(argv[++i]);
+		}
+		else if(0 == strcmp(argv[i], "-benchmark")){
+			// Check if there is a parameter following
+			if(i+1 >= argc){INPUT_ERROR(4);}
+			
+			benchmark = atoi(argv[++i]);
 		}
 		else if(0 == strcmp(argv[i], "-debug")){
 			// Default to ALL if no parameter is following
@@ -367,11 +467,18 @@ int main(int argc, char** argv)
 			printf("\tint SCALE: Scale factor to be applied to width AND height of cutout.\n");
 			printf("\t\t(Has to be >0)\n\n");
 			
+			printf("-benchmark RUNS\n");
+			printf("\tBenchmark all functions and give back an average runtime for each.\n");
+			printf("\tint RUNS: How often any given function should be tested.\n");
+			printf("\t\t(Has to be >0)\n\n");
+			
 			printf("-mode MODE\n");
 			printf("\tint MODE: Execution mode.\n");
 			printf("\t\t0: ASM SIMD (Default)\n");
 			printf("\t\t1: ASM SISD\n");
-			printf("\t\t2: C\n\n");
+			printf("\t\t2: C\n");
+			printf("\t\t3: Improvement Suggestion\n");
+			printf("\t\t\t(A version we believe to be an improvement over the assignment's)\n\n");
 			
 			printf("-debug {MODE}\n");
 			printf("\tstring MODE: Debug mode. Optional.\n");
@@ -414,6 +521,7 @@ int main(int argc, char** argv)
 		width < 0 ||
 		x < 0 ||
 		y < 0 ||
+		benchmark < 0 ||
 		factor < 0){
 			
 		printf("Invalid input: Negative input!\n");
@@ -426,7 +534,7 @@ int main(int argc, char** argv)
 		printf("Invalid input: 0 is not valid!\n");
 		return -1;
 		
-	}else if(executionMode > 2 || executionMode < 0){
+	}else if(executionMode > 3 || executionMode < 0){
 			
 		printf("Invalid input: Unknown executionMode!\n");
 		return -1;
@@ -435,6 +543,11 @@ int main(int argc, char** argv)
 	
 	if(DEBUG == ALL || DEBUG == STEPS) printf("Input checks finished\n");
 
+	if(benchmark > 0){
+		testAll();
+		return 0;
+	}
+	
 	// Declare variables for time measuring
 	clock_t start, end;
 
@@ -459,6 +572,13 @@ int main(int argc, char** argv)
 		case 2:
 			start = clock();
 			data = windowC(data, x, y, width, height, ogWidth);
+			end = clock();
+			printf("Window: Time taken: C-Version: %6.6f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
+			break;
+		case 3:
+			// Use the regular SIMD version, as only the zoom function is improved
+			start = clock();
+			data = window(data, x, y, width, height, ogWidth);
 			end = clock();
 			printf("Window: Time taken: C-Version: %6.6f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
 			break;
@@ -492,6 +612,12 @@ int main(int argc, char** argv)
 		case 2:
 			start = clock();
 			data = zoomC(data, width, height, factor);
+			end = clock();
+			printf("Zoom: Time taken: C-Version: %6.6f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
+			break;
+		case 3:
+			start = clock();
+			data = zoomIS(data, width, height, factor);
 			end = clock();
 			printf("Zoom: Time taken: C-Version: %6.6f\n", ((double) (end - start)) / CLOCKS_PER_SEC);
 			break;
