@@ -37,14 +37,18 @@ window:
 	
 	;# LoopY
 	mov r1, r10
+	mul r3, r3, r12
+	mov r7, r10
 	mov r2, r0
 	mul r4, r5, r12 ;# multiply width by #3 into r4 (Don't need height anymore
 	schleifeY:
 		
 		;# LoopX
 		mov r9, #0
-		add r0, r0, r4
 		mov r2, r0
+		add r0, r0, r4
+		mov r1, r7
+		add r7, r7, r3
 		schleifeX:
 			
 			add r1, r1, #24
@@ -59,7 +63,6 @@ window:
 			b continue
 			
 			SISD:
-			;# TODO find new register instead of r5
 				ldrb r6, [r2], #1
 				strb r6, [r1], #1
 				
@@ -76,7 +79,7 @@ window:
 			continue:
 
 			;# loopX
-			add r9, r9, #8
+			add r9, r9, #24
 			cmp r9, r3
 			blt schleifeX
 

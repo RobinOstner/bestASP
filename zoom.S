@@ -88,37 +88,41 @@ zoom:
 			;# Part 1
 			vmov.u32 s24, r5
 			
-			add r5, r5, #1
-			udiv r12, r5, r4
+			add r12, r5, r4, LSR #1
+			udiv r12, r12, r4
 			vmov.u32 s4, r12
+			add r5, r5, #1
 			
 			;# Part 2
 			vmov.u32 s25, r5
 			
-			add r5, r5, #1
-			udiv r12, r5, r4
+			add r12, r5, r4, LSR #1
+			udiv r12, r12, r4
 			vmov.u32 s5, r12
+			add r5, r5, #1
 			
 			;# Part 3
 			vmov.u32 s26, r5
 			
-			add r5, r5, #1
-			udiv r12, r5, r4
+			add r12, r5, r4, LSR #1
+			udiv r12, r12, r4
 			vmov.u32 s6, r12
+			add r5, r5, #1
 			
 			;# Part 4
 			vmov.u32 s27, r5
 			
-			add r5, r5, #1
-			udiv r12, r5, r4
+			add r12, r5, r4, LSR #1
+			udiv r12, r12, r4
 			vmov.u32 s7, r12
+			add r5, r5, #1
 			
 			vmul.u32 q1, q1, q3			;# q1 *= zoomFactor
 			
 			
 			vdup.32 q7, r6				;# q7 = fillLoopY
 			
-			add r12, r6, #1
+			add r12, r6, r4, LSR #1
 			udiv r12, r12, r4
 			mul r12, r12, r4			;# calc before dup, to save calculation time (minimal)
 			vdup.32 q2, r12				;# q2 = ((fillLoopY+1)/zoomFactor)*zoomFactor

@@ -400,12 +400,12 @@ int main(int argc, char** argv)
 	if(width == -1) width = ogWidth;
 	
 	// Make sure input was valid
-	if(height > height || width > width){
+	if(height > ogHeight || width > ogWidth){
 		
 		printf("Invalid input: Dimensions too large!\n");
 		return -1;
 		
-	}else if((height + y) > height || (width + x) > width){
+	}else if((height + y) > ogHeight || (width + x) > ogWidth){
 		
 		printf("Invalid input: Offset or dimensions too large!\n");
 		return -1;

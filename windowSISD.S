@@ -43,11 +43,10 @@ windowSISD:
 		
 		;# LoopX
 		mov r9, #0
-		add r0, r0, r4
 		mov r2, r0
+		add r0, r0, r4
 		schleifeX:
 			
-			;# TODO find new register instead of r5
 			ldrb r6, [r2], #1
 			strb r6, [r1], #1
 			
