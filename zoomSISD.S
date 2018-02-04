@@ -44,7 +44,7 @@ zoomSISD:
 	
 	mov r6, r1			;# Copy pointers
 	mov r5, r0			;# Loop Counter
-	mov r8, #0
+	mov r8, #0			;# Width counter
 	loop:
 	
 		;# Copy pixel over
