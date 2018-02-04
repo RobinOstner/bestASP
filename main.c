@@ -78,6 +78,10 @@ static int readBMP() {
 }
 
 static int writeBMP() {
+	
+	width *= factor;
+	height *= factor;
+	
 	// fileHeader and infoHeader according to Wikipedia
 	char fileHeader[14] = {'B','M', 0,0,0,0, 0,0,0,0, 54,0,0,0};
 	char infoHeader[40] = {40,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,24,0};
@@ -392,7 +396,7 @@ int main(int argc, char** argv)
 	if(DEBUG == ALL || DEBUG == STEPS) printf("Input handling finished\n");
 	
 	// Read bitmap and check for incorrect input
-	if(0 != readBMP(filenameInput)) return -1;
+	if(0 != readBMP()) return -1;
 	if(DEBUG == ALL || DEBUG == STEPS) printf("Read finished\n");
 	
 	// Default width and height are equal to input's
@@ -476,7 +480,7 @@ int main(int argc, char** argv)
 	// This should not be executed if DEBUG == ALL, as that would not allow debugging of zoom in that mode
 	if(DEBUG == WINDOW){
 		// Write output data to disc
-		writeBMP(filenameOutput, data, width, height);
+		writeBMP();
 		return 0;
 	}
 	
@@ -513,7 +517,7 @@ int main(int argc, char** argv)
 	if(DEBUG == ALL || DEBUG == STEPS) printf("Zoom finished\n");
 	
 	// Write output data to disc
-	writeBMP(filenameOutput, data, width * factor, height * factor);
+	writeBMP();
 
 	if(DEBUG == ALL || DEBUG == STEPS) printf("Write finished\n");
     return 0;
