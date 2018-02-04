@@ -189,12 +189,12 @@ zoomIS:
 					
 			EXIT_SISD_LS:
 			
-			;# pixelLoopX
+			;# fillLoopX
 			;# r5 is already incremented
 			cmp r5, r2
 			blt fillLoopX
 
-		;# pixelLoopY
+		;# fillLoopY
 		add r6, r6, #1
 		cmp r6, r3
 		blt fillLoopY

@@ -118,12 +118,12 @@ zoomSISD:
 			ldrb r10, [r1, r11]
 			strb r10, [r1, r9]
 			
-			;# pixelLoopY
+			;# fillLoopY
 			add r6, r6, #1
 			cmp r6, r3
 			blt fillLoopY
 
-		;# pixelLoopX
+		;# fillLoopX
 		add r5, r5, #1
 		cmp r5, r2
 		blt fillLoopX
