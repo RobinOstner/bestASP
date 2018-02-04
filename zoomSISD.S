@@ -100,22 +100,22 @@ zoomSISD:
 			mul r9, r9, r12
 			
 			;# map parent onto array (x + y * width) * 3
-			mul r8, r8, r2
-			add r8, r8, r7
-			mul r8, r8, r12
+			mul r11, r8, r2
+			add r11, r11, r7
+			mul r11, r11, r12
 			
 			;# Load & Store Colors
-			ldrb r10, [r1, r8]
+			ldrb r10, [r1, r11]
 			strb r10, [r1, r9]
 
-			add r8, r8, #1
+			add r11, r11, #1
 			add r9, r9, #1
-			ldrb r10, [r1, r8]
+			ldrb r10, [r1, r11]
 			strb r10, [r1, r9]
 			
-			add r8, r8, #1
+			add r11, r11, #1
 			add r9, r9, #1
-			ldrb r10, [r1, r8]
+			ldrb r10, [r1, r11]
 			strb r10, [r1, r9]
 			
 			;# pixelLoopY
